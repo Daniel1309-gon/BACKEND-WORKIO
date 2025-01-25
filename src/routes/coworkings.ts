@@ -4,6 +4,7 @@ import { BookingType, HotelSearchResponse } from "../shared/types";
 import { param, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
+import pool from "../database/db";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
@@ -55,7 +56,7 @@ router.get("/search", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/", async (req: Request, res: Response) => {
+/* router.get("/", async (req: Request, res: Response) => {
   try {
     const hotels = await Hotel.find().sort("-lastUpdated");
     res.json(hotels);
@@ -63,29 +64,65 @@ router.get("/", async (req: Request, res: Response) => {
     console.log("error", error);
     res.status(500).json({ message: "Error fetching hotels" });
   }
+}); */
+
+
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    // Query para obtener todos los coworkings ordenados por "last_updated" de manera descendente
+    const query = `
+      SELECT * 
+      FROM empresa
+      ORDER BY last_updated DESC;
+    `;
+
+    // Ejecución de la consulta
+    const result = await pool.query(query);
+
+    // Respuesta con los datos obtenidos
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching coworkings:", error);
+    res.status(500).json({ message: "Error fetching coworkings" });
+  }
 });
 
 router.get(
   "/:id",
-  [param("id").notEmpty().withMessage("Hotel ID is required")],
+  [param("id").notEmpty().withMessage("Coworking ID is required")],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const id = req.params.id.toString();
+    const id = req.params.id;
 
     try {
-      const hotel = await Hotel.findById(id);
-      res.json(hotel);
+      const query = `
+        SELECT * 
+        FROM empresa
+        WHERE idEmpresa = $1;
+      `;
+      const values = [parseInt(id)];
+
+      // Ejecutar la consulta
+      const result = await pool.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Co-working not found" });
+      }
+
+      res.json(result.rows[0]);
     } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Error fetching hotel" });
+      console.error("Error fetching coworking:", error);
+      res.status(500).json({ message: "Error fetching coworking" });
     }
   }
 );
 
+
+//esto ya va con pasarela de pago, asi que se deja para 4 sprint
 router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,

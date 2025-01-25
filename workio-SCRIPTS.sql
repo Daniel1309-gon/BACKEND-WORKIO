@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS Empresa (
 	nombre varchar(50) NOT NULL,
 	telefono varchar(10) NOT NULL,
 	email varchar(100) NOT NULL,
+	last_updated timestamp with time zone NOT NULL DEFAULT now(),
 	PRIMARY KEY (idEmpresa),
 	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
 	CONSTRAINT len_telefono CHECK (telefono ~ '^[0-9]{10}$')
