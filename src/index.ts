@@ -48,7 +48,7 @@ app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/my-hotels", myHotelRoutes);
+app.use("/api/my-coworkings", myHotelRoutes);
 app.use("/api/coworkings", coWorkingsRoutes);
 
 app.get("*", (req: Request, res: Response) => {
