@@ -12,18 +12,6 @@ import bodyParser from 'body-parser';
 import coWorkingsRoutes from './routes/coworkings';
 
 
-
-
-/* pool.query('SELECT 1', (err, res) => {
-  if (err) {
-    console.error('Error conectando a la base de datos', err);
-  } else {
-    console.log('Conexión exitosa a PostgreSQL');
-  }
-}); */
-
-//dotenv.config()
-
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,

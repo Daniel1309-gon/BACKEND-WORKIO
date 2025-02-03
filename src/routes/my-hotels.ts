@@ -5,6 +5,8 @@ import Hotel from "../models/hotel";
 import verifyToken from "../middleware/auth";
 import { body } from "express-validator";
 import { HotelType } from "../shared/types";
+import pool from "../database/db";
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -54,14 +56,46 @@ router.post(
   }
 );
 
-router.get("/", verifyToken, async (req: Request, res: Response) => {
-  try {
-    const hotels = await Hotel.find({ userId: req.userId });
-    res.json(hotels);
-  } catch (error) {
-    res.status(500).json({ message: "Error obteniendo coworkings" });
-  }
-});
+  router.get("/", verifyToken, async (req: Request, res: Response) => {
+    try {
+      /* const hotels = await Hotel.find({ userId: req.userId });
+      res.json(hotels); */
+
+      const token = req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as { idEmpresa: number, role: string };
+
+      if (decoded.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // 2️⃣ Buscar todas las sedes vinculadas a la empresa del admin
+      const client = await pool.connect();
+      const sedeQuery = `
+        SELECT 
+          s.idSede, 
+          s.telefono_sede, 
+          d.tipo_via_principal, 
+          d.via_principal, 
+          d.via_secundaria, 
+          d.complemento
+        FROM Sede s
+        JOIN Direccion d ON s.idDireccion = d.idDireccion
+        WHERE s.idEmpresa = $1;
+      `;
+
+      const result = await client.query(sedeQuery, [decoded.idEmpresa]);
+      client.release();
+      console.log(result.rows);
+      res.json(result.rows);
+    } catch (error) {
+      res.status(500).json({ message: "Error obteniendo coworkings" });
+    }
+  });
 
 router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   const id = req.params.id.toString();

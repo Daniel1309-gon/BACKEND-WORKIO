@@ -4,28 +4,29 @@ CREATE TABLE IF NOT EXISTS Usuario (
 	apellido varchar(50) NOT NULL,
 	email varchar(100) NOT NULL,
 	password varchar(100) NOT NULL,
-	tipo_usuario varchar(25) NOT NULL DEFAULT 'cliente',
 	PRIMARY KEY (idUsuario),
 	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
 
-CREATE TABLE IF NOT EXISTS Empresa (
-	idEmpresa bigint NOT NULL,
-	nombre varchar(50) NOT NULL,
-	telefono varchar(10) NOT NULL,
-	email varchar(100) NOT NULL,
-	last_updated timestamp with time zone NOT NULL DEFAULT now(),
-	PRIMARY KEY (idEmpresa),
-	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
-	CONSTRAINT len_telefono CHECK (telefono ~ '^[0-9]{10}$')
-);
+CREATE TABLE IF NOT EXISTS empresa (
+    idempresa bigserial NOT NULL,
+    nombre character varying(50) NOT NULL,
+	nit character varying(15) NOT NULL,
+    idDireccion int NOT NULL,
+	telefono character varying(10) NOT NULL,
+    email character varying(100) NOT NULL,
+    last_updated timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT empresa_pkey PRIMARY KEY (idempresa),
+    CONSTRAINT email_format CHECK (email::text ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text),
+    CONSTRAINT len_telefono CHECK (telefono::text ~ '^[0-9]{10}$'::text)
+)
 
 
 
 
 CREATE TABLE IF NOT EXISTS Sede (
-	idSede int NOT NULL UNIQUE,
+	idSede serial NOT NULL UNIQUE,
 	idEmpresa bigint NOT NULL,
 	idDireccion int NOT NULL,
 	telefono_sede varchar(10) NOT NULL,
@@ -79,6 +80,14 @@ CREATE TABLE IF NOT EXISTS PasswordResetCodes (
   FOREIGN KEY (userId) REFERENCES Usuario(idUsuario) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS usuario_admin (
+	idAdmin bigserial PRIMARY KEY,
+	idEmpresa bigint not null,
+	email varchar (50) not null,
+	password varchar(100) not null,
+	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+)
+
 
 
 
@@ -92,5 +101,7 @@ ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk3 FOREIGN KEY (idSede) REFERENCES S
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk0 FOREIGN KEY (idFacilidad) REFERENCES Facilidad(idFacilidad);
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk1 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk2 FOREIGN KEY (idSede) REFERENCES Sede(idSede);
+
+ALTER TABLE usuario_admin ADD CONSTRAINT Usuario_admin_fk0 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
 
 
