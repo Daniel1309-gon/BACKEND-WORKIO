@@ -68,8 +68,6 @@ router.post("/logout", (req: Request, res: Response) => {
 
 export default router; */
 
-
-
 import express, { Request, Response } from "express";
 import { check, validationResult } from "express-validator";
 import User from "../models/user";
@@ -102,9 +100,14 @@ router.post(
     try {
       const client = await pool.connect();
       const userQuery = await client.query(
-        "SELECT idUsuario, password FROM Usuario WHERE email = $1",
+        `
+        SELECT idUsuario AS userId, password, 'user' AS role, NULL AS idEmpresa FROM usuario WHERE email = $1 
+        UNION ALL 
+        SELECT idAdmin AS userId, password, 'admin' AS role, idEmpresa FROM usuario_Admin WHERE email = $1
+        `,
         [email]
       );
+
       const user = userQuery.rows[0];
       client.release();
 
@@ -117,8 +120,20 @@ router.post(
         return res.status(400).json({ message: "Invalid Credentials" });
       }
 
+      // Generamos el token, incluyendo el idEmpresa solo si es admin
+      const tokenPayload: { userId: number; role: string; idEmpresa?: number } =
+        {
+          userId: user.userid,
+          role: user.role,
+        };
+
+      if (user.role === "admin" && user.idempresa) {
+        tokenPayload.idEmpresa = user.idempresa;
+      }
+
+
       const token = jwt.sign(
-        { userId: user.id },
+        tokenPayload,
         process.env.JWT_SECRET_KEY as string,
         {
           expiresIn: "1d",
@@ -130,7 +145,7 @@ router.post(
         secure: process.env.NODE_ENV === "production",
         maxAge: 86400000,
       });
-      res.status(200).json({ userId: user.idusuario });
+      res.status(200).json({ userId: user.idusuario, role: user.role });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Something went wrong" });
@@ -152,9 +167,8 @@ router.post("/logout", (req: Request, res: Response) => {
 const usergmail = process.env.EMAIL_USER;
 const pswgmail = process.env.EMAIL_PASS;
 
-
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // o el servicio de correo que uses
+  service: "gmail", // o el servicio de correo que uses
   auth: {
     user: usergmail,
     pass: pswgmail,
@@ -164,9 +178,7 @@ const transporter = nodemailer.createTransport({
 //ruta para solicitar recuperación de contraseña
 router.post(
   "/forgot-password",
-  [
-    check("email", "Email is required").isEmail(),
-  ],
+  [check("email", "Email is required").isEmail()],
   async (req: Request, res: Response): Promise<any> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -180,10 +192,11 @@ router.post(
     try {
       const client = await pool.connect();
       const userQuery = await client.query(
-        "SELECT idUsuario FROM Usuario WHERE email = $1",
+        "SELECT idUsuario, 'user' as role FROM usuario WHERE email = $1 UNION ALL SELECT idAdmin, 'admin' as role FROM usuario_Admin WHERE email = $1",
         [email]
       );
       const user = userQuery.rows[0];
+      console.log(user);
       client.release();
 
       if (!user) {
@@ -193,12 +206,10 @@ router.post(
       const code = Math.floor(100000 + Math.random() * 900000); // Número entre 100000 y 999999
       const expireDate = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
 
-
       await client.query(
         "INSERT INTO PasswordResetCodes (userId, code, expires) VALUES ($1, $2, $3)",
         [user.idusuario, code, expireDate]
       );
-
 
       const mailOptions = {
         from: usergmail,
@@ -209,7 +220,7 @@ router.post(
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.log(email, usergmail,error);
+          console.log(email, usergmail, error);
           return res.status(500).json({ message: "Email could not be sent" });
         }
         res.status(200).json({ message: "Reset link sent to your email" });
@@ -227,7 +238,10 @@ router.post(
   [
     check("email", "Email is required").isEmail(),
     check("code", "Code is required").isInt(),
-    check("newPassword", "Password must be at least 6 characters long").isLength({ min: 6 }),
+    check(
+      "newPassword",
+      "Password must be at least 6 characters long"
+    ).isLength({ min: 6 }),
   ],
   async (req: Request, res: Response): Promise<any> => {
     const errors = validationResult(req);
@@ -243,7 +257,7 @@ router.post(
 
       // Obtener el usuario por correo electrónico
       const userQuery = await client.query(
-        "SELECT idUsuario FROM Usuario WHERE email = $1",
+        "SELECT idUsuario 'user' as role FROM usuario WHERE email = $1 UNION ALL SELECT idAdmin, 'admin' as role FROM usuario_Admin WHERE email = $1",
         [email]
       );
       const user = userQuery.rows[0];
@@ -270,16 +284,23 @@ router.post(
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       // Actualizar la contraseña del usuario
-      await client.query(
-        "UPDATE Usuario SET password = $1 WHERE idUsuario = $2",
-        [hashedPassword, user.idusuario]
-      );
+
+      if (user.role === "user") {
+        await client.query(
+          "UPDATE Usuario SET password = $1 WHERE idUsuario = $2",
+          [hashedPassword, user.idusuario]
+        );
+      } else {
+        await client.query(
+          "UPDATE Usuario_admin SET password = $1 WHERE idAdmin = $2",
+          [hashedPassword, user.idusuario]
+        );
+      }
 
       // Eliminar los códigos asociados al usuario (opcional, por seguridad)
-      await client.query(
-        "DELETE FROM PasswordResetCodes WHERE userId = $1",
-        [user.idusuario]
-      );
+      await client.query("DELETE FROM PasswordResetCodes WHERE userId = $1", [
+        user.idusuario,
+      ]);
 
       client.release();
 
@@ -290,6 +311,5 @@ router.post(
     }
   }
 );
-
 
 export default router;
