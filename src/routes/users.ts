@@ -143,16 +143,15 @@ router.post(
 
       // Insertar el nuevo usuario
       const insertUserQuery = `
-        INSERT INTO Usuario (nombre, apellido, email, password, tipo_usuario)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO Usuario (nombre, apellido, email, password)
+        VALUES ($1, $2, $3, $4)
         RETURNING idUsuario
       `;
       const insertUserResult = await client.query(insertUserQuery, [
         firstName,
         lastName,
         email,
-        hashedPassword, // Considerar el hash de la contraseña antes de almacenarla
-        "cliente",
+        hashedPassword, // Considerar el hash de la contraseña antes de almacenarla,
       ]);
 
       const userId = insertUserResult.rows[0].idUsuario;

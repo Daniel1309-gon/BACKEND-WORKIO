@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS Sede (
 	idSede serial NOT NULL UNIQUE,
 	idEmpresa bigint NOT NULL,
 	idDireccion int NOT NULL,
+	nombre_sede varchar(25) NOT NULL,
 	telefono_sede varchar(10) NOT NULL,
 	PRIMARY KEY (idSede),
 	CONSTRAINT len_telefono_sede CHECK (telefono_sede ~ '^[0-9]{10}$')
@@ -88,6 +89,22 @@ CREATE TABLE IF NOT EXISTS usuario_admin (
 	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 )
 
+create table sede1 (
+	idSede bigSERIAL PRIMARY KEY,
+	idEmpresa INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    price_per_day NUMERIC(10, 2) NOT NULL,
+    starRating INT NOT NULL,
+    facilities JSONB NOT NULL,
+    asistentes INT NOT NULL,
+    visitantes INT NOT NULL,
+    image_urls JSONB,
+	FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa) ON DELETE CASCADE
+);
 
 
 

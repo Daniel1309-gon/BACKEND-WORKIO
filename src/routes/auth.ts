@@ -257,7 +257,7 @@ router.post(
 
       // Obtener el usuario por correo electrónico
       const userQuery = await client.query(
-        "SELECT idUsuario 'user' as role FROM usuario WHERE email = $1 UNION ALL SELECT idAdmin, 'admin' as role FROM usuario_Admin WHERE email = $1",
+        "SELECT idUsuario, 'user' as role FROM usuario WHERE email = $1 UNION ALL SELECT idAdmin, 'admin' as role FROM usuario_Admin WHERE email = $1",
         [email]
       );
       const user = userQuery.rows[0];
