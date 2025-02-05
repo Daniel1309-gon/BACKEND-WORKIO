@@ -121,4 +121,3 @@ ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk2 FOREIGN KEY (idSede
 
 ALTER TABLE usuario_admin ADD CONSTRAINT Usuario_admin_fk0 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
 
-
