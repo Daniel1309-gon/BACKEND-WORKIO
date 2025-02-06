@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
 const router = express.Router();
 
-router.get("/search", async (req: Request, res: Response) => {
+/* router.get("/search", async (req: Request, res: Response) => {
   try {
     const query = constructSearchQuery(req.query);
 
@@ -54,7 +54,83 @@ router.get("/search", async (req: Request, res: Response) => {
     console.log("error", error);
     res.status(500).json({ message: "Something went wrong" });
   }
+}); */
+
+router.get("/search", async (req: Request, res: Response) => {
+  try {
+    // Filtros recibidos desde el frontend
+    const { destination, adultCount, childCount, sortOption, page = 1 } =
+      req.query;
+      console.log(req.query);
+
+    const pageSize = 5;
+    const pageNumber = parseInt(page as string, 10);
+    const offset = (pageNumber - 1) * pageSize;
+
+    // Construcción dinámica del query
+    let query = `SELECT * FROM sede1 WHERE 1=1`;
+    const values: any[] = [];
+
+    if (destination) {
+      values.push(`%${destination}%`);
+      query += ` AND name ILIKE $${values.length}`;
+    }
+
+    if (adultCount) {
+      values.push(parseInt(adultCount as string, 10));
+      query += ` AND asistentes >= $${values.length}`;
+    }
+
+    if (childCount) {
+      values.push(parseInt(childCount as string, 10));
+      query += ` AND visitantes >= $${values.length}`;
+    }
+
+    // Aplicar ordenamiento
+    switch (sortOption) {
+      case "starRating":
+        query += ` ORDER BY starRating DESC`;
+        break;
+      case "pricePerNightAsc":
+        query += ` ORDER BY price_per_day ASC`;
+        break;
+      case "pricePerNightDesc":
+        query += ` ORDER BY price_per_day DESC`;
+        break;
+      default:
+        query += ` ORDER BY name ASC`; // Orden por defecto
+    }
+
+    // Aplicar paginación
+    values.push(pageSize, offset);
+    query += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
+
+
+    // Ejecutar la consulta
+    const result = await pool.query(query, values);
+    const result1 = await pool.query('SELECT * FROM sede1');
+    console.log(result.rows);
+
+    // Obtener el total de registros (para paginación)
+    const countQuery = `SELECT COUNT(*) FROM sede1 WHERE 1=1`;
+    const countResult = await pool.query(countQuery);
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    res.json({
+      data: result.rows,
+      pagination: {
+        total,
+        page: pageNumber,
+        pages: Math.ceil(total / pageSize),
+      },
+    });
+  } catch (error) {
+    console.error("Error en búsqueda de sedes:", error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 });
+
+
 
 /* router.get("/", async (req: Request, res: Response) => {
   try {
