@@ -165,6 +165,8 @@ router.post(
       res.cookie("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: 'strict',
+        domain: process.env.NODE_ENV === "production" ? "frontend-workio.vercel.app" : 'localhost',
         maxAge: 86400000,
       });
       return res.status(200).send({ message: "User registered OK" });
