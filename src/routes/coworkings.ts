@@ -199,7 +199,7 @@ router.get(
 
 
 //esto ya va con pasarela de pago, asi que se deja para 4 sprint
-router.post(
+/* router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,
   async (req: Request, res: Response) => {
@@ -234,7 +234,7 @@ router.post(
 
     res.send(response);
   }
-);
+); */
 
 router.post(
   "/:hotelId/bookings",
