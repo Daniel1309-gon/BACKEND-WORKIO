@@ -11,7 +11,8 @@ declare global {
 
 const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
   const token = req.cookies["auth_token"];
-  console.log(token);
+  console.log("token",token);
+  console.log(process.env.JWT_SECRET_KEY);
   if (!token) {
     return res.status(401).json({ message: "unauthorized" });
   }
