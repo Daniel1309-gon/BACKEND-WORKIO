@@ -27,8 +27,16 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
-      origin: process.env.FRONTEND_URL,
+      origin: process.env.FRONDEND_LINK,
       credentials: true,
+      optionsSuccessStatus: 200,
+      exposedHeaders: 'auth_token',
+      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Access-Control-Allow-Origin',
+        'Content-Type',
+        'Authorization'
+      ]
     })
 );
 
