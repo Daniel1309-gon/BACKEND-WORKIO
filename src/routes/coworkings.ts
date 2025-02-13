@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import Hotel from "../models/hotel";
+//import Hotel from "../models/hotel";
 import { BookingType, HotelSearchResponse } from "../shared/types";
 import { param, validationResult } from "express-validator";
 import Stripe from "stripe";
@@ -236,7 +236,7 @@ router.get(
   }
 ); */
 
-router.post(
+/* router.post(
   "/:hotelId/bookings",
   verifyToken,
   async (req: Request, res: Response) => {
@@ -287,9 +287,9 @@ router.post(
       res.status(500).json({ message: "something went wrong" });
     }
   }
-);
+); */
 
-const constructSearchQuery = (queryParams: any) => {
+/* const constructSearchQuery = (queryParams: any) => {
   let constructedQuery: any = {};
 
   if (queryParams.destination) {
@@ -342,6 +342,6 @@ const constructSearchQuery = (queryParams: any) => {
   }
 
   return constructedQuery;
-};
+}; */
 
 export default router;

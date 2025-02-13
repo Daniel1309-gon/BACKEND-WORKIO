@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+/* import mongoose from "mongoose";
 import { BookingType, HotelType } from "../shared/types";
 
 const bookingSchema = new mongoose.Schema<BookingType>({
@@ -31,4 +31,4 @@ const hotelSchema = new mongoose.Schema<HotelType>({
 });
 
 const Hotel = mongoose.model<HotelType>("Hotel", hotelSchema);
-export default Hotel;
+export default Hotel; */
