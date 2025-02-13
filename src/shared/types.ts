@@ -7,22 +7,21 @@ export type UserType = {
 };
   
 export type HotelType = {
-    _id: string;
-    userId: string;
+    _id: number; // Opcional porque es autoincremental
+    idEmpresa: number;
     name: string;
     city: string;
     country: string;
     description: string;
     type: string;
-    adultCount: number;
-    childCount: number;
-    facilities: string[];
-    pricePerNight: number;
+    price_per_day: number;
     starRating: number;
-    imageUrls: string[];
-    lastUpdated: Date;
-    bookings: BookingType[];
+    facilities: string[];
+    asistentes: number;
+    visitantes: number;
+    image_urls: string[];
 };
+
 
 export type BookingType = {
     _id: string;
