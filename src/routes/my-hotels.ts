@@ -318,7 +318,7 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-router.put(
+/* router.put(
   "/:hotelId",
   verifyToken,
   upload.array("imageFiles"),
@@ -358,7 +358,7 @@ router.put(
       res.status(500).json({ message: "Something went wrong" });
     }
   }
-);
+); */
 
 async function uploadImages(imageFiles: Express.Multer.File[]) {
   const uploadPromises = imageFiles.map(async (image) => {
