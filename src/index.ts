@@ -10,6 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import myHotelRoutes from "./routes/my-hotels";
 import bodyParser from 'body-parser';
 import coWorkingsRoutes from './routes/coworkings';
+import verifyToken from "./middleware/auth";
 
 
 cloudinary.config({
@@ -22,6 +23,7 @@ cloudinary.config({
 
 const app = express();
 app.use(cookieParser());
+app.use(verifyToken);
 app.use(express.json({ limit: "50mb" }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
