@@ -32,6 +32,12 @@ app.use(
     })
 );
 
+app.get("/test-cookie", (req, res) => {
+    console.log("Cookies recibidas:", req.cookies);
+    res.json({ cookies: req.cookies });
+});
+
+console.log(process.env.FRONTEND_URL);
 //app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
 app.use("/api/auth", authRoutes);
