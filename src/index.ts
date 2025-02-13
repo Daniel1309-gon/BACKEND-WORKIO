@@ -23,7 +23,7 @@ cloudinary.config({
 const app = express();
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
@@ -37,7 +37,7 @@ app.get("/test-cookie", (req, res) => {
     res.json({ cookies: req.cookies });
 });
 
-console.log(process.env.FRONTEND_URL);
+console.log("front",process.env.FRONTEND_URL);
 //app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
 app.use("/api/auth", authRoutes);
