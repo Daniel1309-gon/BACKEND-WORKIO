@@ -167,13 +167,12 @@ router.post(
       res.cookie("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: 'strict',
-        domain: process.env.NODE_ENV === "production" ? "frontend-workio.vercel.app" : 'localhost',
+        sameSite: "none",
         maxAge: 86400000,
       });
-      const confirmS = req.signedCookies["auth_token"];
+
       const confirm = req.cookies["auth_token"];
-      console.log(confirmS, confirm);
+      console.log(confirm);
       return res.status(200).send({ message: "User registered OK" });
     } catch (error) {
       console.log(error);

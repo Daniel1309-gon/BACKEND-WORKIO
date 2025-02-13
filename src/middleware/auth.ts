@@ -13,10 +13,8 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
   //const token = req.cookies["auth_token"];
   const token = req.cookies?.auth_token || // Cookies
                 req.headers?.authorization?.replace('Bearer ', '') || // Authorization header
-                req.headers?.['x-access-token'] || // Custom header
                 req.query?.token; // Query parameter
   console.log('Todas las cookies:', req.cookies);
-  console.log('Headers:', req.headers);
   console.log("token",token);
   if (!token) {
     return res.status(401).json({ message: "unauthorized" });
