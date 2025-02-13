@@ -23,7 +23,6 @@ cloudinary.config({
 
 const app = express();
 app.use(cookieParser());
-app.use(verifyToken);
 app.use(express.json({ limit: "50mb" }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
