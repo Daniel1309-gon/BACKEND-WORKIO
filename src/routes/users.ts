@@ -162,17 +162,11 @@ router.post(
         expiresIn: "1d",
       });
 
-      console.log(token);
-
       res.cookie("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
         maxAge: 86400000,
       });
-
-      const confirm = req.cookies["auth_token"];
-      console.log(confirm);
       return res.status(200).send({ message: "User registered OK" });
     } catch (error) {
       console.log(error);

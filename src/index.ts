@@ -10,7 +10,6 @@ import { v2 as cloudinary } from "cloudinary";
 import myHotelRoutes from "./routes/my-hotels";
 import bodyParser from 'body-parser';
 import coWorkingsRoutes from './routes/coworkings';
-import verifyToken from "./middleware/auth";
 
 
 cloudinary.config({
