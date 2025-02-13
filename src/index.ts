@@ -23,7 +23,7 @@ cloudinary.config({
 const app = express();
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
-//app.use(bodyParser.json());
+app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
@@ -32,16 +32,16 @@ app.use(
     })
 );
 
-app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+//app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/my-coworkings", myHotelRoutes);
 app.use("/api/coworkings", coWorkingsRoutes);
 
-app.get("*", (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
-});
+// app.get("*", (req: Request, res: Response) => {
+//     res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+// });
 
 app.listen(7000, () => {
     console.log("server running on localhost:7000");

@@ -154,6 +154,7 @@ router.post(
 );
 
 router.get("/validate-token", verifyToken, (req: Request, res: Response) => {
+  console.log({ userId: req.userId });
   res.status(200).send({ userId: req.userId });
 });
 

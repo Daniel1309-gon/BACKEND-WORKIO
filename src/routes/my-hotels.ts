@@ -324,15 +324,15 @@ router.put(
   upload.array("imageFiles"),
   async (req: Request, res: Response) => {
     try {
-      const updatedHotel: HotelType = req.body;
-      updatedHotel.lastUpdated = new Date();
+      //const updatedHotel: HotelType = req.body;
+      //updatedHotel.lastUpdated = new Date();
 
       const hotel = await Hotel.findOneAndUpdate(
         {
           _id: req.params.hotelId,
           userId: req.userId,
         },
-        updatedHotel,
+        //updatedHotel,
         { new: true }
       );
 
@@ -344,9 +344,9 @@ router.put(
       const files = req.files as Express.Multer.File[];
       const updatedImageUrls = await uploadImages(files);
 
-      hotel.imageUrls = [
+      hotel.image_urls = [
         ...updatedImageUrls,
-        ...(updatedHotel.imageUrls || []),
+        //...(updatedHotel.image_urls || []),
       ];
 
       await hotel.save();
