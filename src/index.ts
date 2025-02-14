@@ -25,20 +25,21 @@ app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 //app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-    cors({
-      origin: 'https://frontend-workio.vercel.app',
-      credentials: true,
-      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
-      allowedHeaders: [
-        'Content-Type',
-        'Authorization'
-      ]
-    })
-);
+// app.use(
+//     cors({
+//       origin: 'https://frontend-workio.vercel.app',
+//       credentials: true,
+//       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+//       allowedHeaders: [
+//         'Content-Type',
+//         'Authorization'
+//       ]
+//     })
+// );
+app.use(cors());
 
 app.get("api/auth/test-cookie", (req, res) => {
-    console.log("Cookies recibidas:", req.cookies);
+    console.log("Cookies recibidas index:", req.cookies);
     res.json({ cookies: req.cookies });
 });
 
