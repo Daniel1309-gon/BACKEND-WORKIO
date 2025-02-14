@@ -27,25 +27,21 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
-      origin: process.env.FRONDEND_LINK,
+      origin: 'https://frontend-workio.vercel.app',
       credentials: true,
-      optionsSuccessStatus: 200,
-      exposedHeaders: 'auth_token',
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
       allowedHeaders: [
-        'Access-Control-Allow-Origin',
         'Content-Type',
         'Authorization'
       ]
     })
 );
 
-app.get("/test-cookie", (req, res) => {
+app.get("api/auth/test-cookie", (req, res) => {
     console.log("Cookies recibidas:", req.cookies);
     res.json({ cookies: req.cookies });
 });
 
-console.log("front",process.env.FRONTEND_URL);
 //app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
 app.use("/api/auth", authRoutes);

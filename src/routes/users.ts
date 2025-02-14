@@ -163,9 +163,9 @@ router.post(
       });
 
       res.cookie("auth_token", token, {
-        httpOnly: false,
-        //secure: process.env.NODE_ENV === "production",
-        secure: true,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        //secure: true,
         sameSite: "none",
         maxAge: 86400000,
       });
