@@ -163,7 +163,7 @@ router.post(
       });
 
       res.cookie("auth_token", token, {
-        httpOnly: true,
+        httpOnly: false,
         //secure: process.env.NODE_ENV === "production",
         secure: true,
         sameSite: "none",
