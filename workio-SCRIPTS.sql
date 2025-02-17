@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS usuario_admin (
 create table sede1 (
 	idSede bigSERIAL PRIMARY KEY,
 	idEmpresa INT NOT NULL,
+	idDireccion int NOT NULL,
     name VARCHAR(255) NOT NULL,
     city VARCHAR(255) NOT NULL,
     country VARCHAR(255) NOT NULL,
@@ -103,7 +104,8 @@ create table sede1 (
     asistentes INT NOT NULL,
     visitantes INT NOT NULL,
     image_urls JSONB,
-	FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa) ON DELETE CASCADE
+	FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa) ON DELETE CASCADE,
+	FOREIGN KEY (idDireccion) REFERENCES Direccion(idDireccion) ON DELETE CASCADE
 );
 
 
