@@ -25,28 +25,13 @@ app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 //app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(
-//     cors({
-//       origin: 'https://frontend-workio.vercel.app',
-//       credentials: true,
-//       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
-//       allowedHeaders: [
-//         'Content-Type',
-//         'Authorization'
-//       ]
-//     })
-// );
-app.use(cors());
+app.use(
+    cors({
+      origin: process.env.FRONTEND_URL,
+      credentials: true,
+    })
+);
 
-<<<<<<< HEAD
-app.get("api/auth/test-cookie", (req, res) => {
-    console.log("Cookies recibidas index:", req.cookies);
-    res.json({ cookies: req.cookies });
-});
-
-//app.use(express.static(path.join(__dirname, "../../frontend/dist")));
-=======
->>>>>>> a396102d61502956f5ef43784b73f424f9f71b44
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -54,15 +39,9 @@ app.use("/api/my-coworkings", myHotelRoutes);
 app.use("/api/coworkings", coWorkingsRoutes);
 console.log("CORS Configurado para: ", process.env.FRONTEND_URL);
 
-<<<<<<< HEAD
-// app.get("*", (req: Request, res: Response) => {
-//     res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
-// });
-=======
 /* app.get("*", (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
 }); */
->>>>>>> a396102d61502956f5ef43784b73f424f9f71b44
 
 app.listen(7000, () => {
     console.log("server running on localhost:7000");

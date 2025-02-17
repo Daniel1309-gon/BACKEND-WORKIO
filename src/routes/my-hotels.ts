@@ -190,29 +190,11 @@ router.get(
   verifyToken,
   async (req: Request, res: Response) => {
     try {
-<<<<<<< HEAD
-      //const updatedHotel: HotelType = req.body;
-      //updatedHotel.lastUpdated = new Date();
-
-      const hotel = await Hotel.findOneAndUpdate(
-        {
-          _id: req.params.hotelId,
-          userId: req.userId,
-        },
-        //updatedHotel,
-        { new: true }
-      );
-
-      if (!hotel) {
-        // Si el hotel no se encuentra, respondemos con 404
-        return res.status(404).json({ message: "Coworking not found" });
-=======
       const token =
         req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
 
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
->>>>>>> a396102d61502956f5ef43784b73f424f9f71b44
       }
 
       const decoded = jwt.verify(
@@ -223,11 +205,6 @@ router.get(
         role: string;
       };
 
-<<<<<<< HEAD
-      hotel.image_urls = [
-        ...updatedImageUrls,
-        //...(updatedHotel.image_urls || []),
-=======
       if (decoded.role !== "admin") {
         return res.status(403).json({ message: "Forbidden" });
       }
@@ -355,7 +332,6 @@ router.put(
         req.body.via_principal,
         req.body.via_secundaria,
         req.body.complemento,
->>>>>>> a396102d61502956f5ef43784b73f424f9f71b44
       ];
 
       const direccionResult = await pool.query(direccionQuery, direccionValues);
