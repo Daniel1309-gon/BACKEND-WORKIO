@@ -125,7 +125,7 @@ router.post(
         [email]
       );
       const user = userQuery.rows[0];
-      console.log(user);
+
       client.release();
 
       if (!user) {
