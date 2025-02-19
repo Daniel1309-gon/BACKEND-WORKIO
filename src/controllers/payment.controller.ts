@@ -7,7 +7,7 @@ import pool from "../database/db";
 dotenv.config();
 
 
-const URL = "http://localhost:7000/api/payment";
+const URL = `${process.env.THIS_URL}/api/payment`;
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || "",
