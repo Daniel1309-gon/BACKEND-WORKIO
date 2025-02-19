@@ -115,7 +115,7 @@ ALTER TABLE Sede ADD CONSTRAINT Sede_fk2 FOREIGN KEY (idDireccion) REFERENCES Di
 
 ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk1 FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario);
 ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk2 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
-ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk3 FOREIGN KEY (idSede) REFERENCES Sede(idSede);
+ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk3 FOREIGN KEY (idSede) REFERENCES Sede1(idSede);
 
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk0 FOREIGN KEY (idFacilidad) REFERENCES Facilidad(idFacilidad);
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk1 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);

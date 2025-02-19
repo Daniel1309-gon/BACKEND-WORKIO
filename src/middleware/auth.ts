@@ -4,7 +4,8 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 declare global {
   namespace Express {
     interface Request {
-      userId: string;
+      userId: string|null;
+      role: string|null;
     }
   }
 }
@@ -18,8 +19,10 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
     req.userId = (decoded as JwtPayload).userId;
+    req.role = (decoded as JwtPayload).role;
     next();
   } catch (error) {
+
     return res.status(401).json({ message: "unauthorized" });
   }
 };

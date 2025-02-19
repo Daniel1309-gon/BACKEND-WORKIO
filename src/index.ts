@@ -7,9 +7,11 @@ import authRoutes from "./routes/auth";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { v2 as cloudinary } from "cloudinary";
-import myHotelRoutes from "./routes/my-hotels";
+import myHotelRoutes from "./routes/my-coworkings";
 import bodyParser from 'body-parser';
 import coWorkingsRoutes from './routes/coworkings';
+import paymentRoutes from './routes/payment';
+import bookingRoutes from './routes/bookings';
 
 
 cloudinary.config({
@@ -37,6 +39,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/my-coworkings", myHotelRoutes);
 app.use("/api/coworkings", coWorkingsRoutes);
+app.use("/api/payment", paymentRoutes)
+app.use("/api/bookings", bookingRoutes);
 console.log("CORS Configurado para: ", process.env.FRONTEND_URL);
 
 /* app.get("*", (req: Request, res: Response) => {

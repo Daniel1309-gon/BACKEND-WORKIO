@@ -101,9 +101,9 @@ router.post(
       const client = await pool.connect();
       const userQuery = await client.query(
         `
-        SELECT idUsuario AS userId, password, 'user' AS role, NULL AS idEmpresa FROM usuario WHERE email = $1 
+        SELECT idUsuario AS userId, password, 'user' AS role, nombre, apellido, email, NULL AS idEmpresa FROM usuario WHERE email = $1 
         UNION ALL 
-        SELECT idAdmin AS userId, password, 'admin' AS role, idEmpresa FROM usuario_Admin WHERE email = $1
+        SELECT idAdmin AS userId, password, 'admin' AS role, NULL as nombre, NULL as apellido, email, idEmpresa FROM usuario_Admin WHERE email = $1
         `,
         [email]
       );
@@ -121,16 +121,22 @@ router.post(
       }
 
       // Generamos el token, incluyendo el idEmpresa solo si es admin
-      const tokenPayload: { userId: number; role: string; idEmpresa?: number } =
+      const tokenPayload: { userId: number; role: string; idEmpresa?: number, email: string, nombre?: string, apellido?: string } =
         {
           userId: user.userid,
           role: user.role,
+          email: email,
         };
 
       if (user.role === "admin" && user.idempresa) {
         tokenPayload.idEmpresa = user.idempresa;
       }
+      if (user.role === "user" && user.nombre && user.apellido) {
+        tokenPayload.nombre = user.nombre;
+        tokenPayload.apellido = user.apellido;
+      }
 
+      console.log(tokenPayload);
 
       const token = jwt.sign(
         tokenPayload,
@@ -146,7 +152,7 @@ router.post(
         sameSite: "none",
         maxAge: 86400000,
       });
-      res.status(200).json({ userId: user.idusuario, role: user.role });
+      res.status(200).json({ userId: user.userid, role: user.role, idEmpresa: user.idempresa, nombre: user.nombre, apellido: user.apellido, email: user.email });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Something went wrong" });
