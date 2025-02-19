@@ -23,8 +23,6 @@ CREATE TABLE IF NOT EXISTS empresa (
 )
 
 
-
-
 CREATE TABLE IF NOT EXISTS Sede (
 	idSede serial NOT NULL UNIQUE,
 	idEmpresa bigint NOT NULL,
