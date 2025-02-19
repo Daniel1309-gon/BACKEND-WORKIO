@@ -11,71 +11,6 @@ import "dotenv/config";
 
 const router = express.Router();
 
-/* router.get("/me", verifyToken, async (req: Request, res: Response): Promise<void> => {
-  const userId = req.userId;
-
-  try {
-    const user = await User.findById(userId).select("-password");
-    if (!user) {
-      res.status(400).json({ message: "User not found" });
-      return;  // Aquí simplemente no retornamos, sino que salimos de la función
-    }
-    res.json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "something went wrong" });
-  }
-});
-
-router.post(
-  "/register",
-  [
-    check("firstName", "First Name is required").isString(),
-    check("lastName", "Last Name is required").isString(),
-    check("email", "Email is required").isEmail(),
-    check("password", "Password with 6 or more characters required").isLength({
-      min: 6,
-    }),
-  ],
-  async (req: Request, res: Response): Promise<any> => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ message: errors.array() });
-    }
-
-    try {
-      let user = await User.findOne({
-        email: req.body.email,
-      });
-
-      if (user) {
-        return res.status(400).json({ message: "User already exists" });
-      }
-
-      user = new User(req.body);
-      await user.save();
-
-      const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET_KEY as string,
-        {
-          expiresIn: "1d",
-        }
-      );
-
-      res.cookie("auth_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 86400000,
-      });
-      return res.status(200).send({ message: "User registered OK" });
-    } catch (error) {
-      console.log(error);
-      res.status(500).send({ message: "Something went wrong" });
-    }
-  }
-); */
-
 router.get(
   "/me",
   verifyToken,
@@ -85,7 +20,7 @@ router.get(
     try {
       const client = await pool.connect();
       const userQuery = `
-      SELECT idUsuario, nombre, apellido, email, tipo_usuario
+      SELECT idUsuario, nombre, apellido, email
       FROM Usuario
       WHERE idUsuario = $1
     `;
@@ -175,7 +110,6 @@ router.post(
   }
 );
 
-
 const usergmail = process.env.EMAIL_USER;
 const pswgmail = process.env.EMAIL_PASS;
 
@@ -243,6 +177,46 @@ router.post(
       return res.status(500).send({ message: "Something went wrong" });
     }
   }
+);
+
+router.put(
+  "/update/:email",
+  //verifyToken,
+  [
+    check("firstName", "First Name is required").isString(),
+    check("lastName", "Last Name is required").isString(),
+    check("email", "Email is required").isEmail(),
+    check(
+      "newPassword",
+      "Password must be at least 6 characters long"
+    ).isLength({ min: 6 }),
+  ],
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { email } = req.params;
+      const { firstName, lastName, password } = req.body;
+
+      const userExist = await pool.query("SELECT * FROM Usuario WHERE email = $1", [email]);
+      if (userExist.rows.length === 0) {
+        return res.status(404).send({ message: "User not found" });
+      }
+
+      // Encriptar la contraseña
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const updatedUser = await pool.query(
+        `UPDATE Usuario SET nombre = $1, apellido = $2, password = $3 
+        WHERE email = $4 RETURNING *`,
+        [firstName, lastName, hashedPassword, email]
+      );
+
+      res.json(updatedUser.rows[0]);
+    } catch (error) {
+      console.log("Error al actualizar el usuario:", error);
+      res.status(500).send({ message: "Error al actualizar el usuario" });
+    }
+  } 
 );
 
 export default router;
