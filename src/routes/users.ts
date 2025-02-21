@@ -28,6 +28,17 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     const userId = req.userId;
 
+    const token =
+      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
+      role: string;
+    };
+
     try {
       const client = await pool.connect();
       const userQuery = `
@@ -45,7 +56,8 @@ router.get(
       }
 
       const user = userResult.rows[0];
-      res.json(user);
+      
+      res.json({...user, role: decoded.role});
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Something went wrong" });
