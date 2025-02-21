@@ -11,6 +11,17 @@ import "dotenv/config";
 
 const router = express.Router();
 
+const usergmail = process.env.EMAIL_USER;
+const pswgmail = process.env.EMAIL_PASS;
+
+const transporter = nodemailer.createTransport({
+  service: "gmail", // o el servicio de correo que uses
+  auth: {
+    user: usergmail,
+    pass: pswgmail,
+  },
+});
+
 router.get(
   "/me",
   verifyToken,
@@ -91,7 +102,6 @@ router.post(
 
       const userId = insertUserResult.rows[0].idUsuario;
       client.release();
-
       // Generar y enviar el token
       const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY as string, {
         expiresIn: "1d",
@@ -99,9 +109,29 @@ router.post(
 
       res.cookie("auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        sameSite: "none",
+        secure: true,
         maxAge: 86400000,
       });
+
+      try {
+        const mailOptions = {
+          from: usergmail,
+          to: email, // También puedes enviar una copia al admin del sistema
+          subject: `Registro exitoso`,
+          html: `
+            <h2>¡Bienvenido a Workio!</h2>
+            <p>Se ha creado tu nueva cuenta con éxito.</p>
+            <p>${firstName} para nosotros es un gusto que te aventures en una nueva forma de trabajar.</p>
+
+          `,
+        };
+
+        await transporter.sendMail(mailOptions);
+      } catch (error) {
+        console.error(error);
+      }
+
       return res.status(200).send({ message: "User registered OK" });
     } catch (error) {
       console.log(error);
@@ -109,15 +139,6 @@ router.post(
     }
   }
 );
-
-const usergmail = process.env.EMAIL_USER;
-const pswgmail = process.env.EMAIL_PASS;
-
-try {
-
-} catch (error) {
-  console.log(error)
-}
 
 router.post(
   "/registeradmin",
@@ -136,20 +157,12 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ message: errors.array() });
     }
-    
+
     const { name, NIT, direccion, telefono, email, password } = req.body;
-    
-    const transporter = nodemailer.createTransport({
-      service: 'gmail', // o el servicio de correo que uses
-      auth: {
-        user: usergmail,
-        pass: pswgmail,
-      },
-    });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    try{
+    try {
       const mailOptions = {
         from: usergmail,
         to: usergmail, // También puedes enviar una copia al admin del sistema
@@ -196,7 +209,10 @@ router.put(
       const { email } = req.params;
       const { firstName, lastName, password } = req.body;
 
-      const userExist = await pool.query("SELECT * FROM Usuario WHERE email = $1", [email]);
+      const userExist = await pool.query(
+        "SELECT * FROM Usuario WHERE email = $1",
+        [email]
+      );
       if (userExist.rows.length === 0) {
         return res.status(404).send({ message: "User not found" });
       }
@@ -216,7 +232,7 @@ router.put(
       console.log("Error al actualizar el usuario:", error);
       res.status(500).send({ message: "Error al actualizar el usuario" });
     }
-  } 
+  }
 );
 
 export default router;
