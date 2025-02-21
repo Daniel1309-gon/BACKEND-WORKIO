@@ -24,7 +24,12 @@ router.get("/search", async (req: Request, res: Response) => {
     const offset = (pageNumber - 1) * pageSize;
 
     // Construcción dinámica del query
-    let query = `SELECT * FROM sede1 WHERE 1=1`;
+    let query = 
+          `SELECT sede1.*, direccion.tipo_via_principal, direccion.via_principal, 
+          direccion.via_secundaria, direccion.complemento
+          FROM sede1
+          JOIN direccion ON sede1.iddireccion = direccion.iddireccion
+          WHERE 1=1`;
     const values: any[] = [];
 
     if (destination) {
@@ -106,8 +111,7 @@ router.get("/search", async (req: Request, res: Response) => {
 
     // Ejecutar la consulta
     const result = await pool.query(query, values);
-    const result1 = await pool.query('SELECT * FROM sede1');
-    //console.log(result.rows);
+
 
     // Obtener el total de registros (para paginación)
     const countQuery = `SELECT COUNT(*) FROM sede1 WHERE 1=1`;
