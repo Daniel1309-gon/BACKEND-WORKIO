@@ -20,6 +20,17 @@ const pool = new Pool({
     : false, 
 });
 
+//Probando pool
+/*
+const pool = new Pool({
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT as string, 10),
+ //connectionString: process.env.POSTGRE_CONNECTION_STRING,
+  ssl: sslCertPath
+});
+ */
+
 pool.connect()
   .then(() => console.log('Conexión exitosa con SSL'))
   .catch(err => console.error('Error al conectar con PostgreSQL', err));
