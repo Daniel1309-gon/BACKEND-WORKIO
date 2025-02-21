@@ -27,4 +27,18 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
   }
 };
 
+// Proband Funcionamiento Token?
+/*
+const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
+  const token = req.cookies["auth_token"];
+  if (!token) {
+    return res.status(401).json({ message: "unauthorized" });
+  }
+  const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
+  req.userId = (decoded as JwtPayload).userId;
+  req.role = (decoded as JwtPayload).role;
+  next();
+};
+*/
+
 export default verifyToken;
