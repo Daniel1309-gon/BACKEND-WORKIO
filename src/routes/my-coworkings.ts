@@ -1,13 +1,11 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
 import cloudinary from "cloudinary";
-//import Hotel from "../models/hotel";
 import verifyToken from "../middleware/auth";
-import { body, validationResult } from "express-validator";
-import { HotelType } from "../shared/types";
+import { body } from "express-validator";
 import pool from "../database/db";
 import jwt from "jsonwebtoken";
-import { json } from "stream/consumers";
+
 import verifyAdmin from "../middleware/verify-admin";
 
 const router = express.Router();
@@ -414,5 +412,39 @@ async function uploadImages(imageFiles: Express.Multer.File[]) {
   const imageUrls = await Promise.all(uploadPromises);
   return imageUrls;
 }
+
+router.delete("/:idsede", verifyToken, verifyAdmin, async (req: Request, res: Response) => {
+  try {
+    const token =
+      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET_KEY as string
+    ) as {
+      idEmpresa: number;
+      role: string;
+    };
+
+    const { idsede } = req.params;
+    const idSede = parseInt(idsede);
+
+    const deleteQuery = `DELETE FROM sede1 WHERE idSede = $1 AND idEmpresa = $2 RETURNING *;`;
+    const result = await pool.query(deleteQuery, [idSede, decoded.idEmpresa]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Coworking no encontrado" });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    res.status(500).json({ message: "Error eliminando coworking", error });
+  }
+});
 
 export default router;
