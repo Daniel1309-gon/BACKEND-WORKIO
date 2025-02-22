@@ -142,27 +142,34 @@ router.post(
   }
 );
 
-router.get("/", verifyToken, verifyAdmin, async (req: Request, res: Response) => {
-  try {
-    const token =
-      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+router.get(
+  "/",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const token =
+        req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
-      idEmpresa: number;
-      role: string;
-    };
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY as string
+      ) as {
+        idEmpresa: number;
+        role: string;
+      };
 
-    if (decoded.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+      if (decoded.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
 
-    // 2️⃣ Buscar todas las sedes vinculadas a la empresa del admin
-    const client = await pool.connect();
-    const sedeQuery = `
+      // 2️⃣ Buscar todas las sedes vinculadas a la empresa del admin
+      const client = await pool.connect();
+      const sedeQuery = `
         SELECT 
           s.idSede, 
           s.type,
@@ -176,14 +183,15 @@ router.get("/", verifyToken, verifyAdmin, async (req: Request, res: Response) =>
         WHERE s.idEmpresa = $1;
       `;
 
-    const result = await client.query(sedeQuery, [decoded.idEmpresa]);
-    client.release();
-    //console.log(result.rows);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ message: "Error obteniendo coworkings" });
+      const result = await client.query(sedeQuery, [decoded.idEmpresa]);
+      client.release();
+      //console.log(result.rows);
+      res.json(result.rows);
+    } catch (error) {
+      res.status(500).json({ message: "Error obteniendo coworkings" });
+    }
   }
-});
+);
 
 router.get(
   "/get-coworking/:id",
@@ -347,7 +355,10 @@ router.put(
           VALUES ($1, $2, $3, $4) RETURNING iddireccion;
         `;
 
-        const insertResult = await pool.query(insertDireccionQuery, direccionValues);
+        const insertResult = await pool.query(
+          insertDireccionQuery,
+          direccionValues
+        );
         idDireccion = insertResult.rows[0].iddireccion;
       }
 
@@ -386,7 +397,7 @@ router.put(
         JSON.stringify(imageUrls),
         idDireccion,
         idSede,
-      ]
+      ];
 
       console.log(updateValues);
       const result = await pool.query(updateQuery, updateValues);
@@ -413,38 +424,138 @@ async function uploadImages(imageFiles: Express.Multer.File[]) {
   return imageUrls;
 }
 
-router.delete("/:idsede", verifyToken, verifyAdmin, async (req: Request, res: Response) => {
-  try {
-    const token =
-      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+router.delete(
+  "/:idsede",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const token =
+        req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+      if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY as string
+      ) as {
+        idEmpresa: number;
+        role: string;
+      };
+
+      const { idsede } = req.params;
+      const idSede = parseInt(idsede);
+
+      const deleteQuery = `DELETE FROM sede1 WHERE idSede = $1 AND idEmpresa = $2 RETURNING *;`;
+      const result = await pool.query(deleteQuery, [idSede, decoded.idEmpresa]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Coworking no encontrado" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({ message: "Error eliminando coworking", error });
+    }
+  }
+);
+
+router.post(
+  "/:idsede/office-types",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response) => {
+    const { nombre, tipo, descripcion, capacidad } = req.body;
+    const { idsede } = req.params;
+
+    if (!nombre || !tipo || capacidad === undefined) {
+      return res.status(400).json({ message: "Nombre, tipo y capacidad son obligatorios" });
+    }
+
+    const idsedeNum = Number(idsede);
+    if (isNaN(idsedeNum)) {
+      return res.status(400).json({ message: "El idsede debe ser un número válido" });
+    }
+
+    const token = req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET_KEY as string
-    ) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
       idEmpresa: number;
-      role: string;
     };
 
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN"); // Iniciar transacción
+
+      const queryFacilidad = `
+        INSERT INTO Facilidad (nombre, tipo, descripcion, capacidad) 
+        VALUES ($1, $2, $3, $4) 
+        RETURNING idfacilidad;  -- Solo devolvemos el ID
+      `;
+      const valuesFacilidad = [nombre, tipo, descripcion || null, capacidad];
+
+      const facilidad = await client.query(queryFacilidad, valuesFacilidad);
+      const idFac = facilidad.rows[0].idfacilidad;
+
+      const querySedeFacilidad = `
+        INSERT INTO Sede_facilidad (idFacilidad, idEmpresa, idsede)
+        VALUES ($1, $2, $3)
+        RETURNING *;
+      `;
+      const valuesSedeFacilidad = [idFac, decoded.idEmpresa, idsedeNum];
+
+      const result = await client.query(querySedeFacilidad, valuesSedeFacilidad);
+
+      await client.query("COMMIT"); // Confirmar transacción
+
+      res.status(201).json(result.rows[0]); // 201 Created
+    } catch (error) {
+      await client.query("ROLLBACK"); // Revertir en caso de error
+      console.error("Error añadiendo espacio:", error);
+      res.status(500).json({ message: "Error añadiendo espacio", error });
+    } finally {
+      client.release(); // Liberar la conexión
+    }
+  }
+);
+
+
+router.get(
+  "/:idsede/office-types",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response) => {
     const { idsede } = req.params;
-    const idSede = parseInt(idsede);
 
-    const deleteQuery = `DELETE FROM sede1 WHERE idSede = $1 AND idEmpresa = $2 RETURNING *;`;
-    const result = await pool.query(deleteQuery, [idSede, decoded.idEmpresa]);
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: "Coworking no encontrado" });
+    // Validar que idsede es un número
+    const idsedeNum = Number(idsede);
+    if (isNaN(idsedeNum)) {
+      return res.status(400).json({ message: "El idsede debe ser un número válido" });
     }
 
-    res.json(result.rows[0]);
+    try {
+      const query = `
+        SELECT f.*, sf.disponibilidad
+        FROM Facilidad f
+        JOIN Sede_facilidad sf ON f.idfacilidad = sf.idfacilidad
+        WHERE sf.idsede = $1;
+      `;
 
-  } catch (error) {
-    res.status(500).json({ message: "Error eliminando coworking", error });
+      const result = await pool.query(query, [idsedeNum]);
+
+      res.status(200).json(result.rows); // 200 OK con los datos
+    } catch (error) {
+      console.error("Error obteniendo oficinas:", error);
+      res.status(500).json({ message: "Error obteniendo oficinas", error });
+    }
   }
-});
+);
+
 
 export default router;

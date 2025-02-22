@@ -23,16 +23,6 @@ CREATE TABLE IF NOT EXISTS empresa (
 )
 
 
-CREATE TABLE IF NOT EXISTS Sede (
-	idSede serial NOT NULL UNIQUE,
-	idEmpresa bigint NOT NULL,
-	idDireccion int NOT NULL,
-	nombre_sede varchar(25) NOT NULL,
-	telefono_sede varchar(10) NOT NULL,
-	PRIMARY KEY (idSede),
-	CONSTRAINT len_telefono_sede CHECK (telefono_sede ~ '^[0-9]{10}$')
-);
-
 CREATE TABLE IF NOT EXISTS Reserva (
 	idReserva serial NOT NULL UNIQUE,
 	idUsuario bigint NOT NULL,
@@ -49,8 +39,8 @@ CREATE TABLE IF NOT EXISTS Sede_facilidad (
 	idEmpresa bigint NOT NULL,
 	idSede int NOT NULL,
 	disponibilidad boolean NOT NULL,
-	detalle varchar(250) NOT NULL,
-	last_update timestamp NOT NULL
+	detalle varchar(250),
+	last_update timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS Facilidad (
@@ -117,7 +107,7 @@ ALTER TABLE Reserva ADD CONSTRAINT Reserva_fk3 FOREIGN KEY (idSede) REFERENCES S
 
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk0 FOREIGN KEY (idFacilidad) REFERENCES Facilidad(idFacilidad);
 ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk1 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
-ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk2 FOREIGN KEY (idSede) REFERENCES Sede(idSede);
+ALTER TABLE Sede_facilidad ADD CONSTRAINT Sede_facilidad_fk2 FOREIGN KEY (idSede) REFERENCES Sede1(idSede);
 
 ALTER TABLE usuario_admin ADD CONSTRAINT Usuario_admin_fk0 FOREIGN KEY (idEmpresa) REFERENCES Empresa(idEmpresa);
 
