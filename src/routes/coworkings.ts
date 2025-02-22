@@ -15,117 +15,116 @@ const router = express.Router();
 router.get("/search", async (req: Request, res: Response) => {
   try {
     // Filtros recibidos desde el frontend
-    const { destination, adultCount, childCount, sortOption, page = 1, types, stars, maxPrice, facilities } =
-      req.query;
-      console.log(req.query);
-
-    const pageSize = 5;
-    const pageNumber = parseInt(page as string, 10);
-    const offset = (pageNumber - 1) * pageSize;
-
-    // Construcción dinámica del query
-    let query = 
-          `SELECT sede1.*, direccion.tipo_via_principal, direccion.via_principal, 
-          direccion.via_secundaria, direccion.complemento
-          FROM sede1
-          JOIN direccion ON sede1.iddireccion = direccion.iddireccion
-          WHERE 1=1`;
-    const values: any[] = [];
-
-    if (destination) {
-      values.push(`%${destination}%`);
-      query += ` AND name ILIKE $${values.length}`;
-    }
-
-    if (adultCount) {
-      values.push(parseInt(adultCount as string, 10));
-      query += ` AND asistentes >= $${values.length}`;
-    }
-
-    if (childCount) {
-      values.push(parseInt(childCount as string, 10));
-      query += ` AND visitantes >= $${values.length}`;
-    }
-
-    if (maxPrice) {
-      values.push(parseInt(maxPrice as string, 10));
-      query += ` AND price_per_day <= $${values.length}`;
-    }
-
-    // Filtro por instalaciones (facilities)
-    if (facilities && Array.isArray(facilities)) {
-      facilities.forEach((facility, index) => {
-        values.push(JSON.stringify({ facility })); // Convertir a formato JSON para usar en jsonb
-        query += ` AND facilities @> $${values.length}::jsonb`; // Usar jsonb y operador @>
-      });
-    } else if (facilities && typeof facilities === 'string') {
-      values.push(JSON.stringify({ facility: facilities })); // Si es un solo string, también lo convertimos a JSON
-      query += ` AND facilities @> $${values.length}::jsonb`;
-    }
-
-    // Filtro por tipos (types)
-    if (types && Array.isArray(types)) {
-      types.forEach((type, index) => {
-        values.push(JSON.stringify({ type })); 
-        console.log(type);// Convertir a formato JSON
-        query += ` AND type @> $${values.length}::jsonb`; // Usar jsonb y operador @>
-      });
-    } else if (types && typeof types === 'string') {
-      values.push(JSON.stringify({ type: types })); // Si es un solo string, también lo convertimos a JSON
-      query += ` AND type @> $${values.length}::jsonb`;
-    }
-
-    // Filtro por estrellas (stars)
-    if (stars) {
-      // Si stars es un array de strings o un único string, manejamos ambos casos
-      if (Array.isArray(stars)) {
-        stars.forEach((star, index) => {
-          values.push(star);
-          query += ` AND starRating = $${values.length}`;
-        });
-      } else if (typeof stars === 'string') {
-        values.push(stars);
-        query += ` AND starRating = $${values.length}`;
-      }
-    }
-
-    // Aplicar ordenamiento
-    switch (sortOption) {
-      case "starRating":
-        query += ` ORDER BY starRating DESC`;
-        break;
-      case "pricePerNightAsc":
-        query += ` ORDER BY price_per_day ASC`;
-        break;
-      case "pricePerNightDesc":
-        query += ` ORDER BY price_per_day DESC`;
-        break;
-      default:
-        query += ` ORDER BY name ASC`; // Orden por defecto
-    }
-
-    // Aplicar paginación
-    values.push(pageSize, offset);
-    query += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
+    const { name, asistentes, visitantes, sortOption, page = 1, types, stars, maxPrice, facilities } =
+  req.query;
 
 
-    // Ejecutar la consulta
-    const result = await pool.query(query, values);
+const pageSize = 5;
+const pageNumber = parseInt(page as string, 10);
+const offset = (pageNumber - 1) * pageSize;
 
+// Construir la parte común del query (filtros)
+let baseQuery = `
+  FROM sede1
+  JOIN direccion ON sede1.iddireccion = direccion.iddireccion
+  WHERE 1=1
+`;
+const values: any[] = [];
 
-    // Obtener el total de registros (para paginación)
-    const countQuery = `SELECT COUNT(*) FROM sede1 WHERE 1=1`;
-    const countResult = await pool.query(countQuery);
-    const total = parseInt(countResult.rows[0].count, 10);
+if (name) {
+  values.push(`%${name}%`);
+  baseQuery += ` AND name ILIKE $${values.length}`;
+}
 
-    res.json({
-      data: result.rows,
-      pagination: {
-        total,
-        page: pageNumber,
-        pages: Math.ceil(total / pageSize),
-      },
+if (asistentes) {
+  values.push(parseInt(asistentes as string, 10));
+  baseQuery += ` AND asistentes >= $${values.length}`;
+}
+
+if (visitantes) {
+  values.push(parseInt(visitantes as string, 10));
+  baseQuery += ` AND visitantes >= $${values.length}`;
+}
+
+if (maxPrice) {
+  values.push(parseInt(maxPrice as string, 10));
+  baseQuery += ` AND price_per_day <= $${values.length}`;
+}
+
+// Filtro por tipos (types)
+if (types && Array.isArray(types)) {
+  const typesList = types.map((type) => `'${type}'`).join(", ");
+  baseQuery += ` AND type IN (${typesList})`;
+} else if (types && typeof types === 'string') {
+  baseQuery += ` AND type = '${types}'`;
+}
+
+// Filtro por facilidades (facilities)
+if (facilities && Array.isArray(facilities)) {
+  const facilitiesArray = `array[${facilities.map((f) => `'${f}'`).join(", ")}]`;
+  baseQuery += ` AND facilities ?| ${facilitiesArray}`;
+} else if (facilities && typeof facilities === 'string') {
+  baseQuery += ` AND facilities ? '${facilities}'`;
+}
+
+// Filtro por estrellas (stars)
+if (stars) {
+  if (Array.isArray(stars)) {
+    stars.forEach((star, index) => {
+      values.push(star);
+      baseQuery += ` AND starRating = $${values.length}`;
     });
+  } else if (typeof stars === 'string') {
+    values.push(stars);
+    baseQuery += ` AND starRating = $${values.length}`;
+  }
+}
+
+// Consulta para contar el total de filas que coinciden con los filtros
+const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+const countResult = await pool.query(countQuery, values);
+const total = parseInt(countResult.rows[0].total, 10);
+
+// Consulta para seleccionar los datos con paginación
+let dataQuery = `
+  SELECT sede1.*, direccion.tipo_via_principal, direccion.via_principal, 
+         direccion.via_secundaria, direccion.complemento
+  ${baseQuery}
+`;
+
+// Aplicar ordenamiento
+switch (sortOption) {
+  case "starRating":
+    dataQuery += ` ORDER BY starRating DESC`;
+    break;
+  case "pricePerNightAsc":
+    dataQuery += ` ORDER BY price_per_day ASC`;
+    break;
+  case "pricePerNightDesc":
+    dataQuery += ` ORDER BY price_per_day DESC`;
+    break;
+  default:
+    dataQuery += ` ORDER BY name ASC`; // Orden por defecto
+}
+
+// Aplicar paginación
+values.push(pageSize, offset);
+dataQuery += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
+
+
+
+// Ejecutar la consulta para obtener los datos
+const result = await pool.query(dataQuery, values);
+
+// Devolver la respuesta
+res.json({
+  data: result.rows,
+  pagination: {
+    total,
+    page: pageNumber,
+    pages: Math.ceil(total / pageSize),
+  },
+});
   } catch (error) {
     console.error("Error en búsqueda de sedes:", error);
     res.status(500).json({ message: "Something went wrong" });
@@ -167,8 +166,7 @@ router.get(
     }
 
     const id = req.params.idsede;
-    console.log(id);
-
+    
     try {
       const query = `
         SELECT * 
