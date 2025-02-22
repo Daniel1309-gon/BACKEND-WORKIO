@@ -92,7 +92,12 @@ router.post(
 
       if (checkUserResult.rows.length > 0) {
         client.release();
-        return res.status(400).json({ message: "User already exists" });
+        return res.status(400).json({ message: "Usuario existente!" });
+      }
+
+      if (email === usergmail) {
+        client.release();
+        return res.status(400).json({ message: "Email no permitido" });
       }
 
       // Encriptar la contraseña
@@ -206,21 +211,21 @@ router.post(
 
 router.put(
   "/update/:email",
-  //verifyToken,
+  verifyToken,
   [
-    check("firstName", "First Name is required").isString(),
-    check("lastName", "Last Name is required").isString(),
+    check("firstName", "First Name is required").optional().isString(),
+    check("lastName", "Last Name is required").optional().isString(),
     check("email", "Email is required").isEmail(),
-    check(
-      "newPassword",
-      "Password must be at least 6 characters long"
-    ).isLength({ min: 6 }),
+    check("newPassword", "Password must be at least 6 characters long")
+      .optional()
+      .isLength({ min: 6 }),
   ],
   async (req: Request, res: Response): Promise<any> => {
     try {
       const { email } = req.params;
-      const { firstName, lastName, password } = req.body;
+      const { firstName, lastName, newPassword } = req.body;
 
+      // Verificar si el usuario existe
       const userExist = await pool.query(
         "SELECT * FROM Usuario WHERE email = $1",
         [email]
@@ -229,15 +234,41 @@ router.put(
         return res.status(404).send({ message: "User not found" });
       }
 
-      // Encriptar la contraseña
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      // Construir la consulta SQL dinámicamente
+      let query = "UPDATE Usuario SET ";
+      const values: any[] = [];
+      let index = 1;
 
-      const updatedUser = await pool.query(
-        `UPDATE Usuario SET nombre = $1, apellido = $2, password = $3 
-        WHERE email = $4 RETURNING *`,
-        [firstName, lastName, hashedPassword, email]
-      );
+      if (firstName) {
+        query += `nombre = $${index}, `;
+        values.push(firstName);
+        index++;
+      }
+
+      if (lastName) {
+        query += `apellido = $${index}, `;
+        values.push(lastName);
+        index++;
+      }
+
+      if (newPassword) {
+        // Encriptar la nueva contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        query += `password = $${index}, `;
+        values.push(hashedPassword);
+        index++;
+      }
+
+      // Eliminar la última coma y espacio
+      query = query.slice(0, -2);
+
+      // Agregar la condición WHERE
+      query += ` WHERE email = $${index} RETURNING *`;
+      values.push(email);
+
+      // Ejecutar la consulta
+      const updatedUser = await pool.query(query, values);
 
       res.json(updatedUser.rows[0]);
     } catch (error) {
