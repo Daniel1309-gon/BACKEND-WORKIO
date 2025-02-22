@@ -119,7 +119,7 @@ router.post(
       const userId = insertUserResult.rows[0].idUsuario;
       client.release();
       // Generar y enviar el token
-      const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY as string, {
+      /* const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY as string, {
         expiresIn: "1d",
       });
 
@@ -128,7 +128,7 @@ router.post(
         sameSite: "none",
         secure: true,
         maxAge: 86400000,
-      });
+      }); */
 
       try {
         const mailOptions = {
