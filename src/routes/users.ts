@@ -222,7 +222,7 @@ router.put(
   async (req: Request, res: Response): Promise<any> => {
     try {
       const { email } = req.params;
-      const { firstName, lastName, newPassword } = req.body;
+      const { firstName, lastName, password } = req.body;
 
       // Verificar si el usuario existe
       const userExist = await pool.query(
@@ -232,6 +232,8 @@ router.put(
       if (userExist.rows.length === 0) {
         return res.status(404).send({ message: "User not found" });
       }
+
+
 
       // Construir la consulta SQL dinámicamente
       let query = "UPDATE Usuario SET ";
@@ -250,10 +252,10 @@ router.put(
         index++;
       }
 
-      if (newPassword) {
+      if (password) {
         // Encriptar la nueva contraseña
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
         query += `password = $${index}, `;
         values.push(hashedPassword);
         index++;
@@ -262,9 +264,12 @@ router.put(
       // Eliminar la última coma y espacio
       query = query.slice(0, -2);
 
+      
       // Agregar la condición WHERE
       query += ` WHERE email = $${index} RETURNING *`;
       values.push(email);
+
+      
 
       // Ejecutar la consulta
       const updatedUser = await pool.query(query, values);
