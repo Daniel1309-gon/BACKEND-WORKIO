@@ -44,6 +44,16 @@ export type HotelSearchResponse = {
       pages: number;
     };
 };
+
+/*
+
+export type PaymentIntentResponseStripe = {
+    paymentIntentId: string;
+    clientSecrettoken: string;
+    totalCost: number;
+};
+
+*/
   
 export type PaymentIntentResponse = {
     paymentIntentId: string;
