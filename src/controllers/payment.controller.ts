@@ -113,7 +113,31 @@ export const createOrder = async (req: Request, res: Response) => {
 
 
 // Segundo Intento otra ruta de pago con Stripe
-/* router.post(
+/* 
+export const successPayment = async (req: Request, res: Response) => {
+  try {
+    const data = req.query;
+    console.log("Data del pago recibido:", data);
+
+    const token =
+      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
+      userId: number;
+    };
+
+    //Procesar el estado del pago en la base de datos
+    const externalReference = JSON.parse(data.external_reference as string);
+    const valoresQuery = [
+      externalReference.idUsuario,
+      parseInt(externalReference.idempresa),
+      parseInt(externalReference.idsede),
+      externalReference.startDate,
+router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,
   async (req: Request, res: Response) => {
