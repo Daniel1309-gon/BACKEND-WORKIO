@@ -53,6 +53,12 @@ export type PaymentIntentResponseStripe = {
     totalCost: number;
 };
 
+export type PaymentIntentResponseMercadoPago = {
+    paymentIntentId: string;
+    clientSecrettoken: string;
+    totalCost: number;
+};
+
 export type CowrkType = {
     city: string;
     country: string;
