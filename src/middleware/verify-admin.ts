@@ -12,6 +12,7 @@ const verifyAdmin = (req: Request, res: Response, next: NextFunction): void => {
 /*
 
 const verifyAdminGeneral = (req: Request, res: Response, next: NextFunction): void => {
+if (!req.userId || req.role !== "admin") {
   }
   next();
 };
