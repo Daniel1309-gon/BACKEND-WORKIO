@@ -53,6 +53,19 @@ export type PaymentIntentResponseStripe = {
     totalCost: number;
 };
 
+export type CowrkType = {
+    city: string;
+    country: string;
+    description: string;
+    type: string;
+    price_per_day: number;
+    starRating: number;
+    facilities: string[];
+    asistentes: number;
+    visitantes: number;
+    image_urls: string[];
+};
+
 */
   
 export type PaymentIntentResponse = {
