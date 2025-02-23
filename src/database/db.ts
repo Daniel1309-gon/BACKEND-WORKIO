@@ -29,6 +29,13 @@ const pool = new Pool({
  //connectionString: process.env.POSTGRE_CONNECTION_STRING,
   ssl: sslCertPath
 });
+
+
+const poolNueva verison = new Pool({
+  user: process.env.DB_USER,
+ //connectionString: process.env.POSTGRE_CONNECTION_STRING,
+  ssl: sslCertPath
+});
  */
 
 pool.connect()
