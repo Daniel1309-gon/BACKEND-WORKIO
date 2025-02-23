@@ -29,7 +29,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
 */
 
 
-/* Correcion Token
+/* Correcion Token Segunda vez
 
 const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
   const token = req.cookies["auth_token"];
@@ -38,10 +38,6 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string);
     req.userId = (decoded as JwtPayload).userId;
     req.role = (decoded as JwtPayload).role;
-    next();
-  } catch (error) {
-
-    return res.status(401);
   }
 };
 
