@@ -112,7 +112,7 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 
-//Intentando otra ruta de pago
+// Segundo Intento otra ruta de pago con Stripe
 /* router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,
@@ -135,10 +135,6 @@ export const createOrder = async (req: Request, res: Response) => {
         userId: req.userId,
       },
     });
-
-    if (!paymentIntent.client_secret) {
-      return res.status(500).json({ message: "Error creating payment intent" });
-    }
 
     const response = {
       paymentIntentId: paymentIntent.id,
