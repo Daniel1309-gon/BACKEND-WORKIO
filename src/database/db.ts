@@ -20,7 +20,7 @@ const pool = new Pool({
     : false, 
 });
 
-//Probando pool
+// Corrigiendo errores de pool
 /*
 const pool = new Pool({
   user: process.env.DB_USER,
