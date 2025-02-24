@@ -233,8 +233,6 @@ router.put(
         return res.status(404).send({ message: "User not found" });
       }
 
-
-
       // Construir la consulta SQL dinámicamente
       let query = "UPDATE Usuario SET ";
       const values: any[] = [];

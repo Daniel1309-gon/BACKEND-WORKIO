@@ -9,7 +9,7 @@ import myCoworkingRoutes from "./routes/my-coworkings";
 import coWorkingsRoutes from './routes/coworkings';
 import paymentRoutes from './routes/payment';
 import bookingRoutes from './routes/bookings';
-
+import adminRoutes from './routes/admin';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -37,6 +37,7 @@ app.use("/api/my-coworkings", myCoworkingRoutes);
 app.use("/api/coworkings", coWorkingsRoutes);
 app.use("/api/payment", paymentRoutes)
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/admins", adminRoutes);
 console.log("CORS Configurado para: ", process.env.FRONTEND_URL);
 
 /* app.get("*", (req: Request, res: Response) => {
