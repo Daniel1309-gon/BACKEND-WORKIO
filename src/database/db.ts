@@ -34,15 +34,6 @@ const pool = new Pool({
 const poolNueva verison = new Pool({
   user: process.env.DB_USER,
  //connectionString: process.env.POSTGRE_CONNECTION_STRING,
-  ssl: sslCertPath
-});
-
-pool.connect()
-  .then(() => console.log('Conexión exitosa con SSL'))
-  .catch(err => console.error('Error al conectar con PostgreSQL', err));
-
-// Exportar el pool para usarlo en otros archivos
-export default pool;
  */
 
 pool.connect()
