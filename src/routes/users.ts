@@ -25,7 +25,7 @@ router.get(
   "/me",
   verifyToken,
   async (req: Request, res: Response): Promise<void> => {
-    const userId = req.userId;
+/*     const userId = req.userId; */
 
     const token =
       req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
@@ -36,16 +36,17 @@ router.get(
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
       role: string;
+      email:string;
     };
 
     try {
       const client = await pool.connect();
       const userQuery = `
-      SELECT idUsuario, nombre, apellido, email
-      FROM Usuario
-      WHERE idUsuario = $1
-    `;
-      const userResult = await client.query(userQuery, [userId]);
+        SELECT idUsuario AS userId, 'user' AS role, nombre, apellido, email, NULL AS idEmpresa FROM usuario WHERE email = $1 
+        UNION ALL 
+        SELECT idAdmin AS userId, 'admin' AS role, NULL as nombre, NULL as apellido, email, idEmpresa FROM usuario_Admin WHERE email = $1
+        `;
+      const userResult = await client.query(userQuery, [decoded.email]);
 
       client.release();
 
@@ -55,8 +56,11 @@ router.get(
       }
 
       const user = userResult.rows[0];
+
+      console.log(user)
       
       res.json({...user, role: decoded.role});
+      
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Something went wrong" });
@@ -216,6 +220,8 @@ router.put(
     try {
       const { email } = req.params;
       const { firstName, lastName, password } = req.body;
+
+      console.log(email);
 
       // Verificar si el usuario existe
       const userExist = await pool.query(
