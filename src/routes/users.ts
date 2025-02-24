@@ -25,8 +25,9 @@ router.get(
   "/me",
   verifyToken,
   async (req: Request, res: Response): Promise<void> => {
-/*     const userId = req.userId; */
 
+/*     const userId = req.userId; */
+    
     const token =
       req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
 
@@ -231,8 +232,6 @@ router.put(
       if (userExist.rows.length === 0) {
         return res.status(404).send({ message: "User not found" });
       }
-
-
 
       // Construir la consulta SQL dinámicamente
       let query = "UPDATE Usuario SET ";
