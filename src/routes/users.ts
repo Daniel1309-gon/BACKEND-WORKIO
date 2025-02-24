@@ -164,9 +164,6 @@ router.post(
     check("direccion", "direccion is required").isString(),
     check("telefono", "telefono is required").isString(),
     check("email", "Email is required").isEmail(),
-    check("password", "Password with 6 or more characters required").isLength({
-      min: 6,
-    }),
   ],
   async (req: Request, res: Response): Promise<any> => {
     const errors = validationResult(req);
@@ -174,10 +171,9 @@ router.post(
       return res.status(400).json({ message: errors.array() });
     }
 
-    const { name, NIT, direccion, telefono, email, password } = req.body;
+    const { name, NIT, direccion, telefono, email } = req.body;
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+
     try {
       const mailOptions = {
         from: usergmail,
@@ -192,15 +188,12 @@ router.post(
             <li><strong>Dirección:</strong> ${direccion}</li>
             <li><strong>Teléfono:</strong> ${telefono}</li>
             <li><strong>Email:</strong> ${email}</li>
-            <li><strong>Hashed Password:</strong> ${hashedPassword}</li>
           </ul>
         `,
       };
 
       await transporter.sendMail(mailOptions);
-      res.json({ message: "Correo enviado correctamente" });
-
-      return res.status(200).send({ message: "Application registered OK" });
+      res.status(200).json({ message: "Correo enviado correctamente" });
     } catch (error) {
       console.log(error);
       return res.status(500).send({ message: "Something went wrong" });
