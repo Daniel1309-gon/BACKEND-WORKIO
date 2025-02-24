@@ -175,8 +175,32 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-//Intentando otra ruta de pago
-/* router.post(
+// Segundo Intento otra ruta de pago con Stripe
+/* 
+export const successPayment = async (req: Request, res: Response) => {
+  try {
+    const data = req.query;
+    console.log("Data del pago recibido:", data);
+
+    const token =
+      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
+      userId: number;
+    };
+
+    //Procesar el estado del pago en la base de datos
+    const externalReference = JSON.parse(data.external_reference as string);
+    const valoresQuery = [
+      externalReference.idUsuario,
+      parseInt(externalReference.idempresa),
+      parseInt(externalReference.idsede),
+      externalReference.startDate,
+router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,
   async (req: Request, res: Response) => {
@@ -199,9 +223,38 @@ export const createOrder = async (req: Request, res: Response) => {
       },
     });
 
-    if (!paymentIntent.client_secret) {
-      return res.status(500).json({ message: "Error creating payment intent" });
+    const response = {
+      paymentIntentId: paymentIntent.id,
+      clientSecret: paymentIntent.client_secret.toString(),
+      totalCost,
+    };
+
+    res.send(response);
+  }
+);
+
+router.post(
+  "/:hotelId/bookings/payment-intentStripe",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    const { numberOfNights } = req.body;
+    const hotelId = req.params.hotelId;
+
+    const hotel = await Hotel.findById(hotelId);
+    if (!hotel) {
+      return res.status(400).json({ message: "cOWROKING not found" });
     }
+
+    const totalCost = hotel.pricePerNight * numberOfNights;
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalCost * 100,
+      currency: "gbp",
+      metadata: {
+        hotelId,
+        userId: req.userId,
+      },
+    });
 
     const response = {
       paymentIntentId: paymentIntent.id,
@@ -212,6 +265,8 @@ export const createOrder = async (req: Request, res: Response) => {
     res.send(response);
   }
 );
+
+
  */
 
 export const successPayment = async (req: Request, res: Response) => {

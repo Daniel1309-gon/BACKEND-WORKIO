@@ -9,4 +9,14 @@ const verifyAdmin = (req: Request, res: Response, next: NextFunction): void => {
   next();
 };
 
+/*
+
+const verifyAdminGeneral = (req: Request, res: Response, next: NextFunction): void => {
+if (!req.userId || req.role !== "admin") {
+  }
+  next();
+};
+
+*/
+
 export default verifyAdmin;

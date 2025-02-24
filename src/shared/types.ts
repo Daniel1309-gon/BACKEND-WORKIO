@@ -44,6 +44,35 @@ export type HotelSearchResponse = {
       pages: number;
     };
 };
+
+/*
+
+export type PaymentIntentResponseStripe = {
+    paymentIntentId: string;
+    clientSecrettoken: string;
+    totalCost: number;
+};
+
+export type PaymentIntentResponseMercadoPago = {
+    paymentIntentId: string;
+    clientSecrettoken: string;
+    totalCost: number;
+};
+
+export type CowrkType = {
+    city: string;
+    country: string;
+    description: string;
+    type: string;
+    price_per_day: number;
+    starRating: number;
+    facilities: string[];
+    asistentes: number;
+    visitantes: number;
+    image_urls: string[];
+};
+
+*/
   
 export type PaymentIntentResponse = {
     paymentIntentId: string;
