@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS Reserva (
 	fecha_inicio timestamp NOT NULL,
 	fecha_fin timestamp NOT NULL,
 	precio float NOT NULL,
+	tipo VARCHAR(10) NOT NULL DEFAULT 'days'
 	PRIMARY KEY (idReserva)
 );
 
