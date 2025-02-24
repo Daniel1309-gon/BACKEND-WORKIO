@@ -47,12 +47,6 @@ export type HotelSearchResponse = {
 
 /*
 
-export type PaymentIntentResponseStripe = {
-    paymentIntentId: string;
-    clientSecrettoken: string;
-    totalCost: number;
-};
-
 export type PaymentIntentResponseMercadoPago = {
     paymentIntentId: string;
     clientSecrettoken: string;
