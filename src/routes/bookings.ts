@@ -22,7 +22,7 @@ router.get("/", verifyToken, async (req, res) => {
 
     const query = `
         SELECT 
-        r.idreserva, r.idusuario, r.fecha_inicio, r.fecha_fin, r.precio,
+        r.idreserva, r.idusuario, r.fecha_inicio, r.fecha_fin, r.precio, r.tipo,
         s.idsede, s.name, s.iddireccion, s.city, s.country, s.image_urls,
         d.tipo_via_principal, d.via_principal, d.via_secundaria, d.complemento
         FROM Reserva r
@@ -52,7 +52,9 @@ router.get("/", verifyToken, async (req, res) => {
       via_principal: row.via_principal,
       via_secundaria: row.via_secundaria,
       complemento: row.complemento,
+      tipo: row.tipo,
     }));
+    
     res.json(bookings);
   } catch (error) {
     console.error("Error obteniendo reservas:", error);
