@@ -1,12 +1,9 @@
 import express, { Request, Response } from "express";
-import { check, validationResult } from "express-validator";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import verifyToken from "../middleware/auth";
 import pool from "../database/db";
 
 import "dotenv/config";
-import { count } from "console";
 
 const router = express.Router();
 
@@ -35,10 +32,6 @@ router.get("/", verifyToken, async (req, res) => {
         ORDER BY r.fecha_inicio ASC;
       `;
 
-    const query2 = `SELECT
-      *
-      FROM Reserva
-      WHERE idusuario = $1`;
 
     //const result1 = await pool.query(query2, [decoded.userId]);
     const result = await pool.query(query, [decoded.userId]);

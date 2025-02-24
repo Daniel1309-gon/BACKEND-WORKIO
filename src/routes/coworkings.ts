@@ -10,131 +10,132 @@ const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
 const router = express.Router();
 
-
-
 router.get("/search", async (req: Request, res: Response) => {
   try {
     // Filtros recibidos desde el frontend
-    const { name, asistentes, visitantes, sortOption, page = 1, types, stars, maxPrice, facilities } =
-  req.query;
+    const {
+      name,
+      asistentes,
+      visitantes,
+      sortOption,
+      page = 1,
+      types,
+      stars,
+      maxPrice,
+      facilities,
+    } = req.query;
 
+    const pageSize = 5;
+    const pageNumber = parseInt(page as string, 10);
+    const offset = (pageNumber - 1) * pageSize;
 
-const pageSize = 5;
-const pageNumber = parseInt(page as string, 10);
-const offset = (pageNumber - 1) * pageSize;
-
-// Construir la parte común del query (filtros)
-let baseQuery = `
+    // Construir la parte común del query (filtros)
+    let baseQuery = `
   FROM sede1
   JOIN direccion ON sede1.iddireccion = direccion.iddireccion
   WHERE 1=1
 `;
-const values: any[] = [];
+    const values: any[] = [];
 
-if (name) {
-  values.push(`%${name}%`);
-  baseQuery += ` AND name ILIKE $${values.length}`;
-}
+    if (name) {
+      values.push(`%${name}%`);
+      baseQuery += ` AND (name ILIKE $${values.length} OR city ILIKE $${values.length})`;
+    }
 
-if (asistentes) {
-  values.push(parseInt(asistentes as string, 10));
-  baseQuery += ` AND asistentes >= $${values.length}`;
-}
+    if (asistentes) {
+      values.push(parseInt(asistentes as string, 10));
+      baseQuery += ` AND asistentes >= $${values.length}`;
+    }
 
-if (visitantes) {
-  values.push(parseInt(visitantes as string, 10));
-  baseQuery += ` AND visitantes >= $${values.length}`;
-}
+    if (visitantes) {
+      values.push(parseInt(visitantes as string, 10));
+      baseQuery += ` AND visitantes >= $${values.length}`;
+    }
 
-if (maxPrice) {
-  values.push(parseInt(maxPrice as string, 10));
-  baseQuery += ` AND price_per_day <= $${values.length}`;
-}
+    if (maxPrice) {
+      values.push(parseInt(maxPrice as string, 10));
+      baseQuery += ` AND price_per_day <= $${values.length}`;
+    }
 
-// Filtro por tipos (types)
-if (types && Array.isArray(types)) {
-  const typesList = types.map((type) => `'${type}'`).join(", ");
-  baseQuery += ` AND type IN (${typesList})`;
-} else if (types && typeof types === 'string') {
-  baseQuery += ` AND type = '${types}'`;
-}
+    // Filtro por tipos (types)
+    if (types && Array.isArray(types)) {
+      const typesList = types.map((type) => `'${type}'`).join(", ");
+      baseQuery += ` AND type IN (${typesList})`;
+    } else if (types && typeof types === "string") {
+      baseQuery += ` AND type = '${types}'`;
+    }
 
-// Filtro por facilidades (facilities)
-if (facilities && Array.isArray(facilities)) {
-  const facilitiesArray = `array[${facilities.map((f) => `'${f}'`).join(", ")}]`;
-  baseQuery += ` AND facilities ?| ${facilitiesArray}`;
-} else if (facilities && typeof facilities === 'string') {
-  baseQuery += ` AND facilities ? '${facilities}'`;
-}
+    // Filtro por facilidades (facilities)
+    if (facilities && Array.isArray(facilities)) {
+      const facilitiesArray = `array[${facilities
+        .map((f) => `'${f}'`)
+        .join(", ")}]`;
+      baseQuery += ` AND facilities ?| ${facilitiesArray}`;
+    } else if (facilities && typeof facilities === "string") {
+      baseQuery += ` AND facilities ? '${facilities}'`;
+    }
 
-// Filtro por estrellas (stars)
-if (stars) {
-  if (Array.isArray(stars)) {
-    stars.forEach((star, index) => {
-      values.push(star);
-      baseQuery += ` AND starRating = $${values.length}`;
-    });
-  } else if (typeof stars === 'string') {
-    values.push(stars);
-    baseQuery += ` AND starRating = $${values.length}`;
-  }
-}
+    // Filtro por estrellas (stars)
+    if (stars) {
+      if (Array.isArray(stars)) {
+        stars.forEach((star, index) => {
+          values.push(star);
+          baseQuery += ` AND starRating = $${values.length}`;
+        });
+      } else if (typeof stars === "string") {
+        values.push(stars);
+        baseQuery += ` AND starRating = $${values.length}`;
+      }
+    }
 
-// Consulta para contar el total de filas que coinciden con los filtros
-const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
-const countResult = await pool.query(countQuery, values);
-const total = parseInt(countResult.rows[0].total, 10);
+    // Consulta para contar el total de filas que coinciden con los filtros
+    const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].total, 10);
 
-// Consulta para seleccionar los datos con paginación
-let dataQuery = `
+    // Consulta para seleccionar los datos con paginación
+    let dataQuery = `
   SELECT sede1.*, direccion.tipo_via_principal, direccion.via_principal, 
          direccion.via_secundaria, direccion.complemento
   ${baseQuery}
 `;
 
-// Aplicar ordenamiento
-switch (sortOption) {
-  case "starRating":
-    dataQuery += ` ORDER BY starRating DESC`;
-    break;
-  case "pricePerNightAsc":
-    dataQuery += ` ORDER BY price_per_day ASC`;
-    break;
-  case "pricePerNightDesc":
-    dataQuery += ` ORDER BY price_per_day DESC`;
-    break;
-  default:
-    dataQuery += ` ORDER BY name ASC`; // Orden por defecto
-}
+    // Aplicar ordenamiento
+    switch (sortOption) {
+      case "starRating":
+        dataQuery += ` ORDER BY starRating DESC`;
+        break;
+      case "pricePerNightAsc":
+        dataQuery += ` ORDER BY price_per_day ASC`;
+        break;
+      case "pricePerNightDesc":
+        dataQuery += ` ORDER BY price_per_day DESC`;
+        break;
+      default:
+        dataQuery += ` ORDER BY name ASC`; // Orden por defecto
+    }
 
-// Aplicar paginación
-values.push(pageSize, offset);
-dataQuery += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
+    // Aplicar paginación
+    values.push(pageSize, offset);
+    dataQuery += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
 
+    // Ejecutar la consulta para obtener los datos
+    const result = await pool.query(dataQuery, values);
 
-
-// Ejecutar la consulta para obtener los datos
-const result = await pool.query(dataQuery, values);
-
-// Devolver la respuesta
-res.json({
-  data: result.rows,
-  pagination: {
-    total,
-    page: pageNumber,
-    pages: Math.ceil(total / pageSize),
-  },
-});
+    // Devolver la respuesta
+    res.json({
+      data: result.rows,
+      pagination: {
+        total,
+        page: pageNumber,
+        pages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
     console.error("Error en búsqueda de sedes:", error);
     res.status(500).json({ message: "Something went wrong" });
   }
 });
-
-
-
-
-
 
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -166,7 +167,7 @@ router.get(
     }
 
     const id = req.params.idsede;
-    
+
     try {
       const query = `
         SELECT * 
@@ -189,7 +190,6 @@ router.get(
     }
   }
 );
-
 
 //esto ya va con pasarela de pago, asi que se deja para 4 sprint
 /* router.post(
@@ -281,6 +281,5 @@ router.get(
     }
   }
 ); */
-
 
 export default router;
