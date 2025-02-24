@@ -26,7 +26,7 @@ router.get(
   verifyToken,
   async (req: Request, res: Response): Promise<void> => {
     const userId = req.userId;
-
+    
     const token =
       req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
 

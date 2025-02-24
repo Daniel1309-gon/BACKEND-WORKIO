@@ -5,7 +5,6 @@ import pool from "../database/db";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import "dotenv/config";
-import routerUser from "./users";
 
 const router = express.Router();
 
@@ -23,57 +22,85 @@ const transporter = nodemailer.createTransport({
 router.post(
     "/register", 
     [
+        check("nombre", "Name is required").not().isEmpty(),
+        check("nit", "NIT is required").not().isEmpty(),
         check("email", "Email is required").isEmail(),
-        check("idEmpresa", "Company ID is required").isNumeric(),
+        check("telefono", "Phone is required").not().isEmpty(),
+        check("direccion", "Address is required").not().isEmpty(),
     ],
     async (req: Request, res: Response): Promise<void> => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             res.status(400).json({"validation Error": errors.array()});
         }
-        const { email, idEmpresa} = req.body;
+
+        const { nombre, nit, telefono, email, direccion } = req.body;
         const generatedPassword = crypto.randomBytes(8).toString("hex");
         const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-        console.log(email, idEmpresa, generatedPassword);
+        console.log(email, generatedPassword);
         
         try {
             const client = await pool.connect();
 
-            const userAdminQuery = `
-                INSERT INTO usuario_admin (email, password)
-                VALUES ($1, $2)
-                RETURNING idAdmin
+            // Formatear dirección
+            const direccionParts = direccion.split("#");
+            const viaPrincipal = direccionParts[0].trim();
+            const viaSecundaria = direccionParts.length > 0 ? direccionParts[1].split("-")[0].trim() : "";
+            const complemento = direccionParts.length > 0 ? direccionParts[1].split("-")[1].trim() : "";
+            const direccionFormateada = `${viaPrincipal} ${viaSecundaria} ${complemento}`;
+
+            // Insertar dirección
+            const direccionQuery = `
+            INSERT INTO Direccion (tipo_via_principal, via_principal, via_secundaria, complemento)
+            VALUES ('Calle', $1, $2, $3)
+            RETURNING idDireccion
             `;
-            
+            const direccionResult = await client.query(direccionQuery, [
+                viaPrincipal, 
+                viaSecundaria, 
+                complemento
+            ]);
+            const idDireccion = direccionResult.rows[0].iddireccion;
+
+            // Insertar empresa
+            const empresaQuery = `
+            INSERT INTO empresa (nombre, nit, idDireccion, telefono, email)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING idempresa
+            `;
+            const empresaResult = await client.query(empresaQuery, [
+                nombre,
+                nit,
+                idDireccion,
+                telefono,
+                email,
+            ]);
+            const idEmpresa = empresaResult.rows[0].idempresa;
+
+            // Insertar usuario administrador
+            const userAdminQuery = `
+            INSERT INTO usuario_admin (idEmpresa, email, password)
+            VALUES ($1, $2, $3)
+            RETURNING idAdmin
+            `;
             const userAdminResult = await client.query(userAdminQuery, [
-                email, 
-                hashedPassword]);
-
+            idEmpresa,
+            email,
+            hashedPassword,
+            ]);
             const userAdminId = userAdminResult.rows[0].idAdmin;
-
-            console.log("User Admin created", userAdminId);
-
-            //Eliminar el usuario de la tabla 'users'
-
-            const deletedUser = await pool.query(
-                "DELETE FROM Usuario WHERE email = $1", 
-                [email]
-            );
-            
-            if (deletedUser.rowCount === 0) {
-                client.release();
-                res.status(404).json({ message: "User not found in users" });
-                return;
-            }
 
             client.release();
 
+            // Enviar email con credenciales
             const mailOptions = {
                 from: usergmail,
                 to: email,
-                subject: "Welcome! Your Admin Account Details",
-                text: `Your account has been upgraded to admin.\n\nEmail: ${email}
-                \nPassword: ${generatedPassword}\n\nPlease change your password after logging in.`,
+                subject: "Bienvenido! Your Admin Account Details",
+                text: `Tu cuenta de administrador ha sido creada.
+                \nEmail: ${email}
+                \nPassword: ${generatedPassword}
+                \nCambie su contraseña despues de iniciar sesión.`,
             };
             await transporter.sendMail(mailOptions);
 
@@ -82,6 +109,34 @@ router.post(
             res.status(500).json({ message: "Internal server error" });
         }
     }
-    );
+);
+
+router.get('/direcciones', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM Direccion';
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener direcciones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+router.get(
+    '/empresas', 
+    async (req: Request, res: Response): Promise<void> => {
+        
+});
+
+router.get('/admins', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM usuario_admin';
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener direcciones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
 export default router;

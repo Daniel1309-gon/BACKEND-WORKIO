@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS Usuario (
 	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
+CREATE TABLE IF NOT EXISTS usuario_admin (
+	idAdmin bigserial PRIMARY KEY,
+	idEmpresa bigint not null,
+	email varchar (50) not null,
+	password varchar(100) not null,
+	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+)
 
 CREATE TABLE IF NOT EXISTS empresa (
     idempresa bigserial NOT NULL,
@@ -21,6 +28,15 @@ CREATE TABLE IF NOT EXISTS empresa (
     CONSTRAINT email_format CHECK (email::text ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text),
     CONSTRAINT len_telefono CHECK (telefono::text ~ '^[0-9]{10}$'::text)
 )
+
+CREATE TABLE IF NOT EXISTS Direccion (
+	idDireccion serial NOT NULL UNIQUE,
+	tipo_via_principal varchar(25) NOT NULL,
+	via_principal varchar(50) NOT NULL,
+	via_secundaria varchar(25) NOT NULL,
+	complemento varchar(50) NOT NULL,
+	PRIMARY KEY (idDireccion)
+);
 
 
 CREATE TABLE IF NOT EXISTS Reserva (
@@ -52,15 +68,6 @@ CREATE TABLE IF NOT EXISTS Facilidad (
 	PRIMARY KEY (idFacilidad)
 );
 
-CREATE TABLE IF NOT EXISTS Direccion (
-	idDireccion serial NOT NULL UNIQUE,
-	tipo_via_principal varchar(25) NOT NULL,
-	via_principal varchar(50) NOT NULL,
-	via_secundaria varchar(25) NOT NULL,
-	complemento varchar(50) NOT NULL,
-	PRIMARY KEY (idDireccion)
-);
-
 CREATE TABLE IF NOT EXISTS PasswordResetCodes (
   id SERIAL PRIMARY KEY,              -- Identificador único para cada registro
   userId INT NOT NULL,                -- ID del usuario asociado al código
@@ -69,14 +76,6 @@ CREATE TABLE IF NOT EXISTS PasswordResetCodes (
   createdAt TIMESTAMP DEFAULT NOW(),  -- Fecha y hora de creación del registro
   FOREIGN KEY (userId) REFERENCES Usuario(idUsuario) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS usuario_admin (
-	idAdmin bigserial PRIMARY KEY,
-	idEmpresa bigint not null,
-	email varchar (50) not null,
-	password varchar(100) not null,
-	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
-)
 
 create table sede1 (
 	idSede bigSERIAL PRIMARY KEY,
