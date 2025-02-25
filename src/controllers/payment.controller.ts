@@ -4,6 +4,7 @@ import { PayerRequest } from "mercadopago/dist/clients/payment/create/types";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import pool from "../database/db";
+import nodemailer from "nodemailer";
 dotenv.config();
 
 const URL = `${process.env.THIS_URL}/api/payment`;
@@ -19,35 +20,32 @@ const payment = new Payment(client);
 
 const combineDateAndTime = (date: string, time: string) => {
   const [year, month, day] = date.split("-").map(Number);
-  const [hours, minutes] = time.split(":").map(Number)
-  return (new Date(year, month-1, day, hours, minutes, 0));
+  const [hours, minutes] = time.split(":").map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0);
 };
-
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-
     const token =
-    req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
-    userId: number;
-    role: string;
-    email: string;
-    nombre: string;
-    apellido: string;
-  };
-
-  const email = decoded.email;
-  const name = decoded.nombre;
-  const surname = decoded.apellido;
-  const idUsuario = decoded.userId;
-
-
+      req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
+      userId: number;
+      role: string;
+      email: string;
+      nombre: string;
+      apellido: string;
+    };
+    
+    const email = decoded.email;
+    const name = decoded.nombre;
+    const surname = decoded.apellido;
+    const idUsuario = decoded.userId;
+    
     const {
       startDate,
       endDate,
@@ -65,10 +63,9 @@ export const createOrder = async (req: Request, res: Response) => {
     } = req.body;
     const data = req.body;
 
-    
     const price_int = parseInt(totalPrice);
-    
-    let ext_ref = {}
+
+    let ext_ref = {};
     let itemsToPay = [];
 
     if (reservationType === "days") {
@@ -94,17 +91,17 @@ export const createOrder = async (req: Request, res: Response) => {
           unit_price: price_int,
         },
       ];
-      ext_ref={
+      ext_ref = {
         reservationType,
-        startDate:startDate,
-        endDate:endDate,
-        price_int:price_int,
-        idsede:idsede,
-        idempresa:idempresa,
-        idUsuario:idUsuario,
+        startDate: startDate,
+        endDate: endDate,
+        price_int: price_int,
+        idsede: idsede,
+        idempresa: idempresa,
+        idUsuario: idUsuario,
+        sedeName: sedeName
       };
-    }
-    else {
+    } else {
       if (
         !totalPrice ||
         !sedeName ||
@@ -129,15 +126,16 @@ export const createOrder = async (req: Request, res: Response) => {
           unit_price: price_int,
         },
       ];
-      ext_ref={
+      ext_ref = {
         reservationType,
-        reservationDate:reservationDate,
-        startTime:startTime,
-        endTime:endTime,
-        price_int:price_int,
-        idsede:idsede,
-        idempresa:idempresa,
-        idUsuario:idUsuario,
+        reservationDate: reservationDate,
+        startTime: startTime,
+        endTime: endTime,
+        price_int: price_int,
+        idsede: idsede,
+        idempresa: idempresa,
+        idUsuario: idUsuario,
+        sedeName:sedeName
       };
     }
     const preference = new Preference(client);
@@ -205,7 +203,6 @@ router.post(
 export const successPayment = async (req: Request, res: Response) => {
   try {
     const data = req.query;
-    console.log("Data del pago recibido:", data);
 
     const token =
       req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
@@ -216,24 +213,29 @@ export const successPayment = async (req: Request, res: Response) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
       userId: number;
+      email:string;
     };
 
     //Procesar el estado del pago en la base de datos
     const externalReference = JSON.parse(data.external_reference as string);
 
-    let fecha_inicio = new Date()
-    let fecha_fin = new Date()
+    let fecha_inicio = new Date();
+    let fecha_fin = new Date();
 
-    
-    if (externalReference.reservationType === "days"){
+    if (externalReference.reservationType === "days") {
       fecha_inicio = externalReference.startDate;
       fecha_fin = externalReference.endDate;
-    } else{      
-      fecha_inicio = combineDateAndTime(externalReference.reservationDate, externalReference.startTime);
-      fecha_fin = combineDateAndTime(externalReference.reservationDate, externalReference.endTime);
+    } else {
+      fecha_inicio = combineDateAndTime(
+        externalReference.reservationDate,
+        externalReference.startTime
+      );
+      fecha_fin = combineDateAndTime(
+        externalReference.reservationDate,
+        externalReference.endTime
+      );
     }
-    
-    
+
     const valoresQuery = [
       externalReference.idUsuario,
       parseInt(externalReference.idempresa),
@@ -249,6 +251,34 @@ export const successPayment = async (req: Request, res: Response) => {
       RETURNING *;
       `;
     await pool.query(query, valoresQuery);
+
+    
+
+    const usergmail = process.env.EMAIL_USER;
+    const pswgmail = process.env.EMAIL_PASS;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // o el servicio de correo que uses
+      auth: {
+        user: usergmail,
+        pass: pswgmail,
+      },
+    });
+
+    const mailOptions = {
+      from: usergmail,
+      to: decoded.email, // También puedes enviar una copia al admin del sistema
+      subject: `Reserva exitosa`,
+      html: `
+        <h2>¡Tu reserva te espera!</h2>
+        <p>Se ha creado tu reserva con éxito.</p>
+        <p>Recuerda esta información: Reserva en ${externalReference.sedeName} del ${fecha_inicio} hasta ${fecha_fin}</p>
+        <p>Precio final: <strong>${externalReference.price_int} COP</strong></p>
+
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
     res.redirect(`${process.env.FRONTEND_URL}/bookings`);
   } catch (error) {
     console.log("Error en el pago: ", error);
