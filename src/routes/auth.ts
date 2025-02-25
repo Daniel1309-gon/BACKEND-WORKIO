@@ -65,8 +65,6 @@ router.post(
         tokenPayload.apellido = user.apellido;
       }
 
-      console.log(tokenPayload);
-
       const token = jwt.sign(
         tokenPayload,
         process.env.JWT_SECRET_KEY as string,

@@ -25,8 +25,6 @@ router.get(
   "/me",
   verifyToken,
   async (req: Request, res: Response): Promise<void> => {
-
-/*     const userId = req.userId; */
     
     const token =
       req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
@@ -43,9 +41,7 @@ router.get(
     try {
       const client = await pool.connect();
       const userQuery = `
-        SELECT idUsuario AS userId, 'user' AS role, nombre, apellido, email, NULL AS idEmpresa FROM usuario WHERE email = $1 
-        UNION ALL 
-        SELECT idAdmin AS userId, 'admin' AS role, NULL as nombre, NULL as apellido, email, idEmpresa FROM usuario_Admin WHERE email = $1
+        SELECT idUsuario AS userId, 'user' AS role, nombre, apellido, email, NULL AS idEmpresa FROM usuario WHERE email = $1
         `;
       const userResult = await client.query(userQuery, [decoded.email]);
 
@@ -57,8 +53,6 @@ router.get(
       }
 
       const user = userResult.rows[0];
-
-      console.log(user)
       
       res.json({...user, role: decoded.role});
       
@@ -221,8 +215,6 @@ router.put(
     try {
       const { email } = req.params;
       const { firstName, lastName, password } = req.body;
-
-      console.log(email);
 
       // Verificar si el usuario existe
       const userExist = await pool.query(
