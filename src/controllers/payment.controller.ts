@@ -20,7 +20,6 @@ const payment = new Payment(client);
 const combineDateAndTime = (date: string, time: string) => {
   const [year, month, day] = date.split("-").map(Number);
   const [hours, minutes] = time.split(":").map(Number)
-  console.log(year,month,day,hours,minutes);
   return (new Date(year, month-1, day, hours, minutes, 0));
 };
 
@@ -47,7 +46,7 @@ export const createOrder = async (req: Request, res: Response) => {
   const name = decoded.nombre;
   const surname = decoded.apellido;
   const idUsuario = decoded.userId;
-  console.log("idUsuario", idUsuario);
+
 
     const {
       startDate,
@@ -65,7 +64,7 @@ export const createOrder = async (req: Request, res: Response) => {
       totalHours,
     } = req.body;
     const data = req.body;
-    console.log(data);
+
     
     const price_int = parseInt(totalPrice);
     
@@ -141,8 +140,6 @@ export const createOrder = async (req: Request, res: Response) => {
         idUsuario:idUsuario,
       };
     }
-
-    console.log(reservationDate, startTime ,combineDateAndTime(reservationDate, startTime))
     const preference = new Preference(client);
 
     const result = await preference.create({
@@ -165,7 +162,6 @@ export const createOrder = async (req: Request, res: Response) => {
         external_reference: JSON.stringify(ext_ref),
       },
     });
-    console.log(result);
     res
       .status(200)
       .json({ url: result?.init_point || result?.sandbox_init_point });
@@ -225,8 +221,6 @@ export const successPayment = async (req: Request, res: Response) => {
     //Procesar el estado del pago en la base de datos
     const externalReference = JSON.parse(data.external_reference as string);
 
-    console.log(externalReference);
-
     let fecha_inicio = new Date()
     let fecha_fin = new Date()
 
@@ -266,7 +260,7 @@ export const pendingPayment = async (req: Request, res: Response) => {
     console.log("Pago pendiente", req.query);
     const data = req.query;
     console.log("Data", data);
-    res.status(200).json({ message: "Pago pendiente" });
+    res.redirect(`${process.env.FRONTEND_URL}`);
   } catch (error) {
     console.log("Error procesando pago pendiente", error);
     res.status(500).json({ message: "Error procesando pago pendiente" });
