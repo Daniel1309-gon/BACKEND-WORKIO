@@ -61,77 +61,54 @@ router.get(
 });
 
 router.post(
-    "/register", 
-    [
-        check("nombre", "Name is required").not().isEmpty(),
-        check("nit", "NIT is required").not().isEmpty(),
-        check("email", "Email is required").isEmail(),
-        check("telefono", "Phone is required").not().isEmpty(),
-        check("direccion", "Address is required").not().isEmpty(),
-    ],
+    "/promoteadmin",
+    //verifyToken,
+    // [
+    //     check("email", "Email is required").isEmail
+    // ],
     async (req: Request, res: Response): Promise<void> => {
+        const { email, active } = req.body;
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             res.status(400).json({"validation Error": errors.array()});
         }
 
-        const { nombre, nit, telefono, email, direccion } = req.body;
-        const generatedPassword = crypto.randomBytes(8).toString("hex");
-        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-        
         try {
             const client = await pool.connect();
+            
+            const checkUserQuery = "SELECT * FROM empresa WHERE email = $1";
+            const checkUserResult = await client.query(checkUserQuery, [email]);
+            if (checkUserResult.rows.length == 0) {
+                res.status(400).json({ message: "Usuario no existe!" });
+            }
+            
+            const generatedPassword = crypto.randomBytes(8).toString("hex");
+            const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-            // Formatear dirección
-            const direccionParts = direccion.split("#");
-            const tipoViaPrincipal = direccionParts[0].split(" ")[0].trim();
-            const viaPrincipal = direccionParts[0].split(" ")[1].trim();
-            const viaSecundaria = direccionParts.length > 0 ? direccionParts[1].split("-")[0].trim() : "";
-            const complemento = direccionParts.length > 0 ? direccionParts[1].split("-")[1].trim() : "";
-            const direccionFormateada = `${viaPrincipal} ${viaSecundaria} ${complemento}`;
+            // Verificar si existe
+            const checkAdminQuery = await client.query(
+                `SELECT * FROM empresa WHERE email = $1`,
+            [email]);
+            if (checkAdminQuery.rows.length === 0) {
+                res.status(404).send({ message: "Empresa not found" });
+            }
 
-            // Insertar dirección
-            const direccionQuery = `
-            INSERT INTO Direccion (tipo_via_principal, via_principal, via_secundaria, complemento)
-            VALUES ($1, $2, $3, $4)
-            RETURNING idDireccion
-            `;
-            const direccionResult = await client.query(direccionQuery, [
-                tipoViaPrincipal,
-                viaPrincipal, 
-                viaSecundaria, 
-                complemento
-            ]);
-            const idDireccion = direccionResult.rows[0].iddireccion;
-
-            // Insertar empresa
+            // Actualizar estado de la empresa
             const empresaQuery = `
-            INSERT INTO empresa (nombre, nit, idDireccion, telefono, email)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING idempresa
-            `;
-            const empresaResult = await client.query(empresaQuery, [
-                nombre,
-                nit,
-                idDireccion,
-                telefono,
+            UPDATE empresa SET active = $1 WHERE email = $2 RETURNING *`;
+            await client.query(empresaQuery, [
+                active, 
+                email
+            ]);
+            
+            // Actualizar clave usuario administrador
+            const userAdminQuery = `
+            UPDATE usuario_admin SET password = $1 WHERE email = $2 RETURNING *`;
+            await client.query(userAdminQuery, [
+                hashedPassword,
                 email,
             ]);
-            const idEmpresa = empresaResult.rows[0].idempresa;
-
-            // Insertar usuario administrador
-            const userAdminQuery = `
-            INSERT INTO usuario_admin (idEmpresa, email, password)
-            VALUES ($1, $2, $3)
-            RETURNING idAdmin
-            `;
-            const userAdminResult = await client.query(userAdminQuery, [
-            idEmpresa,
-            email,
-            hashedPassword,
-            ]);
-            const userAdminId = userAdminResult.rows[0].idAdmin;
-
+            
             client.release();
 
             // Enviar email con credenciales
@@ -146,41 +123,61 @@ router.post(
             };
             await transporter.sendMail(mailOptions);
 
-            res.status(201).json({ message: "User promoted to admin", userAdminId });
+            res.status(200).json({ message: "Admin promoted" });
         } catch (error) {
-            res.status(500).json({ message: "Internal server error" });
+            const errorMessage = (error as Error).message;
+            res.status(500).json({ message: errorMessage });
         }
     }
 );
 
-router.get('/direcciones', async (req, res) => {
-    try {
-        const query = 'SELECT * FROM Direccion';
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error al obtener direcciones:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+router.get(
+    '/usuarios',
+    verifyToken,
+    async (req, res) => {
+        try {
+            const query = "SELECT * FROM usuario_admin";
+            const result = await pool.query(query);
+            res.json(result.rows);
+        } catch (error) {
+            console.error('Error al obtener usuarios:', error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
     }
+);
+
+router.get(
+    '/direcciones', 
+    verifyToken,
+    async (req, res) => {
+        try {
+            const query = 'SELECT * FROM Direccion';
+            const result = await pool.query(query);
+            res.json(result.rows);
+        } catch (error) {
+            console.error('Error al obtener direcciones:', error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
 });
 
 router.get(
-    '/empresas/:idEmpresa?', 
+    '/empresas/:email?',
+    //verifyToken,
     async (req: Request, res: Response): Promise<any> => {
         try {
-            const { idEmpresa }  = req.params;
+            const { email }  = req.params;
             let empresaExist;
             let empresa;
 
-            if (idEmpresa) {
+            if (email) {
                 empresaExist = await pool.query(
-                    `SELECT * FROM empresa WHERE idEmpresa = $1`,
-                    [idEmpresa]
+                    `SELECT * FROM empresa WHERE email = $1`,
+                    [email]
                 );
                 empresa = empresaExist.rows[0];
             } else {
                 empresaExist = await pool.query(
-                    `SELECT * FROM empresa`
+                    `SELECT * FROM empresa WHERE active = false`
                 );
                 empresa = empresaExist.rows;
             }
