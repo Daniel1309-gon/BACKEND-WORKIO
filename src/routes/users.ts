@@ -36,6 +36,7 @@ router.get(
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
       role: string;
       email:string;
+      userid: number;
     };
 
     try {
@@ -271,5 +272,26 @@ router.put(
     }
   }
 );
+
+router.delete('/delete/me', verifyToken, async (req: Request, res: Response) =>{
+    try {
+      const token = req.cookies.auth_token || req.headers.authorization?.split(" ")[1];
+  
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as {
+        userId: string;
+      };
+  
+      const idUsuario = parseInt(decoded.userId);
+  
+      const query = `DELETE FROM usuario where idusuario = $1 RETURNING *`;
+
+      await pool.query(query, [idUsuario]);
+  
+      res.clearCookie("auth_token", { sameSite: "none", secure: true });
+      res.status(200).json({ message: "Cuenta eliminada correctamente" });
+    } catch (error) {
+      console.error("error: ", error);
+    }
+});
 
 export default router;
