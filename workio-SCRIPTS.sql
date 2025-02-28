@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS usuario_admin (
 	email varchar (50) not null,
 	password varchar(100) not null,
 	CONSTRAINT email_format CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+	active boolean not null default false
 )
 
 CREATE TABLE IF NOT EXISTS empresa (

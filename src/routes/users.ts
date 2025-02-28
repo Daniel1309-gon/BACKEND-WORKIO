@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
 import verifyToken from "../middleware/auth";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import pool from "../database/db";
 
 import nodemailer from "nodemailer";
@@ -159,8 +160,8 @@ router.post(
 router.post(
   "/registeradmin",
   [
-    check("name", "Name is required").isString(),
-    check("NIT", "NIT is required").isString(),
+    check("nombre", "Name is required").isString(),
+    check("nit", "NIT is required").isString(),
     check("direccion", "direccion is required").isString(),
     check("telefono", "telefono is required").isString(),
     check("email", "Email is required").isEmail(),
@@ -171,20 +172,21 @@ router.post(
       return res.status(400).json({ message: errors.array() });
     }
 
-    const { name, NIT, direccion, telefono, email } = req.body;
-
+    const { nombre, nit, telefono, email, direccion } = req.body;
+    const generatedPassword = crypto.randomBytes(8).toString("hex");
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     try {
       const mailOptions = {
         from: usergmail,
         to: usergmail, // También puedes enviar una copia al admin del sistema
-        subject: `Solicitud registro de empresa: ${name}`,
+        subject: `Solicitud registro de empresa: ${nombre}`,
         html: `
           <h2>Solicitud Exitosa!</h2>
           <p>Se ha creado una nueva solicitud de registro de empresa con éxito.</p>
           <ul>
-            <li><strong>Nombre:</strong> ${name}</li>
-            <li><strong>NIT:</strong> ${NIT}</li>
+            <li><strong>Nombre:</strong> ${nombre}</li>
+            <li><strong>NIT:</strong> ${nit}</li>
             <li><strong>Dirección:</strong> ${direccion}</li>
             <li><strong>Teléfono:</strong> ${telefono}</li>
             <li><strong>Email:</strong> ${email}</li>
@@ -193,7 +195,61 @@ router.post(
       };
 
       await transporter.sendMail(mailOptions);
-      res.status(200).json({ message: "Correo enviado correctamente" });
+
+      const client = await pool.connect();
+
+      // Formatear dirección
+      const direccionParts = direccion.split("#");
+      const tipoViaPrincipal = direccionParts[0].split(" ")[0].trim();
+      const viaPrincipal = direccionParts[0].split(" ")[1].trim();
+      const viaSecundaria = direccionParts.length > 0 ? direccionParts[1].split("-")[0].trim() : "";
+      const complemento = direccionParts.length > 0 ? direccionParts[1].split("-")[1].trim() : "";
+
+      // Insertar dirección
+      const direccionQuery = `
+        INSERT INTO Direccion (tipo_via_principal, via_principal, via_secundaria, complemento)
+        VALUES ($1, $2, $3, $4)
+        RETURNING idDireccion
+      `;
+      const direccionResult = await client.query(direccionQuery, [
+        tipoViaPrincipal,
+        viaPrincipal, 
+        viaSecundaria, 
+        complemento
+      ]);
+      const idDireccion = direccionResult.rows[0].iddireccion;
+
+      // Insertar empresa
+      const empresaQuery = `
+        INSERT INTO empresa (nombre, nit, idDireccion, telefono, email)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING idempresa
+      `;
+      const empresaResult = await client.query(empresaQuery, [
+        nombre,
+        nit,
+        idDireccion,
+        telefono,
+        email,
+      ]);
+      const idEmpresa = empresaResult.rows[0].idempresa;
+
+      // Insertar usuario administrador
+      const userAdminQuery = `
+        INSERT INTO usuario_admin (idEmpresa, email, password)
+        VALUES ($1, $2, $3)
+        RETURNING idAdmin
+      `;
+      const userAdminResult = await client.query(userAdminQuery, [
+        idEmpresa,
+        email,
+        hashedPassword,
+      ]);
+      const userAdminId = userAdminResult.rows[0].idAdmin;
+
+      client.release();
+
+      res.status(201).json({ message: "Admin register", userAdminId });
     } catch (error) {
       console.log(error);
       return res.status(500).send({ message: "Something went wrong" });
