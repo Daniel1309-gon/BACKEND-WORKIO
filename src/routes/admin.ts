@@ -165,20 +165,29 @@ router.get('/direcciones', async (req, res) => {
 });
 
 router.get(
-    '/empresas/:idEmpresa', 
+    '/empresas/:idEmpresa?', 
     async (req: Request, res: Response): Promise<any> => {
         try {
             const { idEmpresa }  = req.params;
-            const empresaExist = await pool.query(
-                `SELECT * FROM empresa WHERE idEmpresa = $1`,
-                [idEmpresa]
-            );
+            let empresaExist;
+            let empresa;
+
+            if (idEmpresa) {
+                empresaExist = await pool.query(
+                    `SELECT * FROM empresa WHERE idEmpresa = $1`,
+                    [idEmpresa]
+                );
+                empresa = empresaExist.rows[0];
+            } else {
+                empresaExist = await pool.query(
+                    `SELECT * FROM empresa`
+                );
+                empresa = empresaExist.rows;
+            }
 
             if (empresaExist.rows.length === 0) {
                 return res.status(404).send({ message: "Empresa not found" });
             }
-
-            const empresa = empresaExist.rows[0];
 
             res.json(empresa);
         } catch (error) {
