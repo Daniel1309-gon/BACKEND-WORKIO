@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS empresa (
 	telefono character varying(10) NOT NULL,
     email character varying(100) NOT NULL,
     last_updated timestamp with time zone NOT NULL DEFAULT now(),
+	active boolean NOT NULL DEFAULT false,
     CONSTRAINT empresa_pkey PRIMARY KEY (idempresa),
     CONSTRAINT email_format CHECK (email::text ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text),
     CONSTRAINT len_telefono CHECK (telefono::text ~ '^[0-9]{10}$'::text)
