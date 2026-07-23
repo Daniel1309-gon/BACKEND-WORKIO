@@ -194,4 +194,28 @@ router.get(
     }
 );
 
+router.post(
+    '/empresa/me/:idEmpresa?',
+    verifyToken,
+    async (req: Request, res: Response): Promise<any> => {
+        try {
+            const { idEmpresa } = req.params;
+            
+            const query = `
+            SELECT * FROM empresa WHERE idEmpresa = $1`;
+            const result = await pool.query(query, [idEmpresa]);
+            const empresa = result.rows[0];
+
+            if (!empresa) {
+                return res.status(404).send({ message: "Empresa not found" });
+            }
+            
+            res.json(empresa);
+        } catch (error) {
+            console.error('Error al obtener empresa:', error);
+            res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    }
+);
+
 export default router;
